@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>番茄钟</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>番茄钟</h1>
+
+        <div class="mode-switcher">
+            <button class="mode-btn active" data-mode="work" data-time="25">专注</button>
+            <button class="mode-btn" data-mode="shortBreak" data-time="5">短休息</button>
+            <button class="mode-btn" data-mode="longBreak" data-time="15">长休息</button>
+        </div>
+
+        <div class="progress-ring">
+            <svg width="260" height="260">
+                <circle class="progress-ring-bg" cx="130" cy="130" r="120"></circle>
+                <circle class="progress-ring-fill" cx="130" cy="130" r="120"></circle>
+            </svg>
+            <div class="timer-text-overlay" id="timerText">25:00</div>
+        </div>
+
+        <div class="controls">
+            <button class="btn-primary" id="toggleBtn">开始</button>
+            <button class="btn-secondary" id="resetBtn">重置</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <span class="stat-value" id="todayCount">0</span>
+                <span class="stat-label">今日完成</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="totalMinutes">0</span>
+                <span class="stat-label">专注分钟</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>

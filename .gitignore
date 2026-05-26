@@ -1,0 +1,11 @@
+# Dependencies
+node_modules/
+
+# Installers
+*.msi
+*.exe
+*.zip
+
+# OS files
+.DS_Store
+Thumbs.db
