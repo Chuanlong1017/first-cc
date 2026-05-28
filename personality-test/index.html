@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MBTI 人格分析测试</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <!-- 欢迎页 -->
+    <section id="welcome-page" class="page active">
+      <div class="welcome-content">
+        <div class="logo">MBTI</div>
+        <h1>16型人格分析测试</h1>
+        <p class="subtitle">基于迈尔斯-布里格斯类型指标</p>
+        <p class="description">通过 20 道精选题目，探索你的性格特质，发现真实的自己。</p>
+        <button id="start-btn" class="btn-primary">开始测试</button>
+        <div class="stats" id="history-stats"></div>
+      </div>
+    </section>
+
+    <!-- 答题页 -->
+    <section id="quiz-page" class="page">
+      <div class="quiz-header">
+        <div class="progress-bar">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <div class="progress-text">题目 <span id="current-num">1</span> / <span id="total-num">20</span></div>
+      </div>
+      <div class="quiz-content">
+        <div class="question-card">
+          <p class="question-text" id="question-text"></p>
+          <div class="options" id="options"></div>
+        </div>
+        <div class="quiz-nav">
+          <button id="prev-btn" class="btn-secondary" disabled>上一题</button>
+          <button id="next-btn" class="btn-primary" disabled>下一题</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 结果页 -->
+    <section id="result-page" class="page">
+      <div class="result-content">
+        <div class="result-header">
+          <div class="type-badge" id="type-badge"></div>
+          <h1 class="type-name" id="type-name"></h1>
+          <p class="type-nickname" id="type-nickname"></p>
+        </div>
+        <div class="dimensions" id="dimensions"></div>
+        <div class="result-details">
+          <div class="detail-card">
+            <h3>性格描述</h3>
+            <p id="type-desc"></p>
+          </div>
+          <div class="detail-card">
+            <h3>适合职业</h3>
+            <p id="type-careers"></p>
+          </div>
+          <div class="detail-card">
+            <h3>人际特点</h3>
+            <p id="type-relations"></p>
+          </div>
+        </div>
+        <div class="result-actions">
+          <button id="restart-btn" class="btn-primary">重新测试</button>
+          <button id="share-btn" class="btn-secondary">复制结果</button>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
