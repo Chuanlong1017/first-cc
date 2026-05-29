@@ -303,6 +303,10 @@
         <span class="control-label">显示外皮</span>
         <div class="toggle-switch active" id="toggle-skin" onclick="toggleSkin()"></div>
       </div>
+      <div class="control-row">
+        <span class="control-label">骨骼旋转</span>
+        <div class="toggle-switch" id="toggle-bone-rotate" onclick="toggleBoneRotation()"></div>
+      </div>
 
       <div class="control-row">
         <span class="control-label">透视半径</span>
@@ -368,6 +372,7 @@
     let skinMaterials = [], boneMaterials = [];
     let currentSkinIndex = 0, currentBoneIndex = 0;
     let showBone = true, showSkin = true;
+    let autoRotateBone = false;
     let clock = new THREE.Clock();
     let raycaster = new THREE.Raycaster();
     let mouse = new THREE.Vector2(-999, -999);
@@ -756,6 +761,10 @@
         skinGroup.visible = showSkin;
         document.getElementById('toggle-skin').classList.toggle('active', showSkin);
       };
+      window.toggleBoneRotation = () => {
+        autoRotateBone = !autoRotateBone;
+        document.getElementById('toggle-bone-rotate').classList.toggle('active', autoRotateBone);
+      };
       window.selectSkin = (i) => {
         currentSkinIndex = i;
         const p = skinPresets[i];
@@ -839,6 +848,10 @@
           tailTip.position.y = 0.8 + Math.sin(t * 2.5) * 0.03;
           tailTip.position.z = -0.05 + Math.cos(t * 2.5) * 0.03;
         }
+      }
+
+      if (autoRotateBone && boneGroup) {
+        boneGroup.rotation.y += 0.008;
       }
 
       controls.update();
