@@ -314,8 +314,8 @@
       <div class="control-row">
         <span class="control-label">透视强度</span>
         <div class="slider-wrap">
-          <input type="range" class="slider" id="xray-strength" min="0" max="1" step="0.05" value="0.75" oninput="updateXRayStrength(this.value)">
-          <span class="slider-value" id="xray-strength-val">75%</span>
+          <input type="range" class="slider" id="xray-strength" min="0" max="1" step="0.05" value="0.95" oninput="updateXRayStrength(this.value)">
+          <span class="slider-value" id="xray-strength-val">95%</span>
         </div>
       </div>
 
@@ -481,7 +481,7 @@
         );
         shader.fragmentShader = shader.fragmentShader.replace(
           '#include <opaque_fragment>',
-          `#include <opaque_fragment>\nfloat dist = distance(vWorldPosition, uHoverPoint);\nfloat hoverFactor = 1.0 - smoothstep(0.0, uHoverRadius, dist);\nfloat alpha = mix(1.0, 1.0 - uHoverStrength, hoverFactor);\ngl_FragColor.a *= alpha;`
+          `#include <opaque_fragment>\nfloat dist = distance(vWorldPosition, uHoverPoint);\nfloat hoverFactor = 1.0 - smoothstep(0.0, uHoverRadius, dist);\nfloat alpha = mix(1.0, max(1.0 - uHoverStrength, 0.05), hoverFactor);\ngl_FragColor.a *= alpha;`
         );
         mat.userData.shader = shader;
       };
