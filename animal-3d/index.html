@@ -19,7 +19,6 @@
     }
     canvas { display: block; }
 
-    /* 标题 */
     .header {
       position: absolute;
       top: 24px;
@@ -43,7 +42,6 @@
       margin-top: 6px;
     }
 
-    /* 控制面板 */
     .controls {
       position: absolute;
       bottom: 24px;
@@ -59,8 +57,10 @@
       flex-direction: column;
       gap: 14px;
       z-index: 10;
-      min-width: 320px;
-      max-width: 90vw;
+      min-width: 340px;
+      max-width: 92vw;
+      max-height: 70vh;
+      overflow-y: auto;
       animation: fadeInUp 1s ease 0.3s both;
     }
 
@@ -77,7 +77,6 @@
       white-space: nowrap;
     }
 
-    /* 切换开关 */
     .toggle-switch {
       position: relative;
       width: 48px;
@@ -103,7 +102,6 @@
     }
     .toggle-switch.active::after { transform: translateX(22px); }
 
-    /* 颜色选择 */
     .color-options {
       display: flex;
       gap: 8px;
@@ -133,7 +131,67 @@
       text-shadow: 0 1px 2px rgba(0,0,0,0.3);
     }
 
-    /* 提示 */
+    /* 滑块 */
+    .slider-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+    }
+    .slider {
+      -webkit-appearance: none;
+      appearance: none;
+      flex: 1;
+      height: 6px;
+      background: #E0D5C8;
+      border-radius: 3px;
+      outline: none;
+    }
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #D4A574;
+      cursor: pointer;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    }
+    .slider-value {
+      font-size: 12px;
+      color: #A08060;
+      min-width: 36px;
+      text-align: right;
+    }
+
+    /* 上传按钮 */
+    .upload-row {
+      display: flex;
+      gap: 10px;
+    }
+    .upload-btn {
+      flex: 1;
+      background: #FAF0E6;
+      border: 1.5px dashed #D4A574;
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 13px;
+      color: #8B6914;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+      font-weight: 500;
+    }
+    .upload-btn:hover {
+      background: #F5E6D0;
+      border-style: solid;
+    }
+    .upload-btn.has-file {
+      background: #E8F5E9;
+      border-color: #81C784;
+      color: #4CAF50;
+    }
+
     .hint {
       position: absolute;
       top: 80px;
@@ -150,25 +208,44 @@
       line-height: 1.6;
     }
 
-    /* 加载动画 */
-    .loading {
+    .loading-overlay {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      text-align: center;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(255, 248, 240, 0.85);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       z-index: 20;
+      transition: opacity 0.3s;
     }
-    .loading-spinner {
+    .loading-overlay.hidden { opacity: 0; pointer-events: none; }
+    .spinner {
       width: 48px;
       height: 48px;
       border: 3px solid #F0E0D0;
       border-top-color: #D4A574;
       border-radius: 50%;
       animation: spin 1s linear infinite;
-      margin: 0 auto 16px;
+      margin-bottom: 16px;
     }
-    .loading p { color: #A08060; font-size: 14px; }
+    .loading-overlay p { color: #A08060; font-size: 14px; }
+
+    .toast {
+      position: absolute;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-60px);
+      background: rgba(90, 74, 58, 0.9);
+      color: white;
+      padding: 10px 24px;
+      border-radius: 24px;
+      font-size: 14px;
+      z-index: 30;
+      transition: transform 0.3s ease;
+      pointer-events: none;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
 
     @keyframes spin { to { transform: rotate(360deg); } }
     @keyframes fadeInDown {
@@ -186,7 +263,7 @@
 
     @media (max-width: 480px) {
       .header h1 { font-size: 20px; }
-      .controls { padding: 16px 20px; min-width: auto; width: 92vw; }
+      .controls { padding: 16px 18px; min-width: auto; width: 96vw; }
       .hint { display: none; }
     }
   </style>
@@ -201,19 +278,21 @@
 </head>
 <body>
   <div id="canvas-container">
-    <div class="loading" id="loading">
-      <div class="loading-spinner"></div>
-      <p>正在加载 3D 模型...</p>
+    <div class="loading-overlay" id="loading">
+      <div class="spinner"></div>
+      <p>正在加载 3D 场景...</p>
     </div>
 
     <div class="header">
       <h1>萌宠骨骼探秘</h1>
-      <p>拖动旋转 · 滚轮缩放 · 探索小动物的内在世界</p>
+      <p>拖动旋转 · 滚轮缩放 · 悬停透视 · 探索小动物的内在世界</p>
     </div>
 
     <div class="hint">
-      试试切换骨骼和外皮<br>观察小可爱的结构吧
+      鼠标悬停在外皮上<br>可看到 X-Ray 透视效果
     </div>
+
+    <div class="toast" id="toast"></div>
 
     <div class="controls">
       <div class="control-row">
@@ -224,6 +303,22 @@
         <span class="control-label">显示外皮</span>
         <div class="toggle-switch active" id="toggle-skin" onclick="toggleSkin()"></div>
       </div>
+
+      <div class="control-row">
+        <span class="control-label">透视半径</span>
+        <div class="slider-wrap">
+          <input type="range" class="slider" id="xray-radius" min="0.3" max="2.5" step="0.1" value="1.2" oninput="updateXRayRadius(this.value)">
+          <span class="slider-value" id="xray-radius-val">1.2</span>
+        </div>
+      </div>
+      <div class="control-row">
+        <span class="control-label">透视强度</span>
+        <div class="slider-wrap">
+          <input type="range" class="slider" id="xray-strength" min="0" max="1" step="0.05" value="0.75" oninput="updateXRayStrength(this.value)">
+          <span class="slider-value" id="xray-strength-val">75%</span>
+        </div>
+      </div>
+
       <div class="control-row">
         <span class="control-label">外皮颜色</span>
         <div class="color-options" id="skin-colors"></div>
@@ -232,12 +327,25 @@
         <span class="control-label">骨骼颜色</span>
         <div class="color-options" id="bone-colors"></div>
       </div>
+
+      <div class="upload-row">
+        <div class="upload-btn" id="btn-upload-skin" onclick="document.getElementById('file-skin').click()">
+          📁 上传外皮模型
+        </div>
+        <div class="upload-btn" id="btn-upload-bone" onclick="document.getElementById('file-bone').click()">
+          📁 上传骨骼模型
+        </div>
+      </div>
+      <input type="file" id="file-skin" accept=".gltf,.glb,.obj,.fbx" style="display:none" onchange="handleUpload(event,'skin')">
+      <input type="file" id="file-bone" accept=".gltf,.glb,.obj,.fbx" style="display:none" onchange="handleUpload(event,'bone')">
     </div>
   </div>
 
   <script type="module">
     import * as THREE from 'three';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 
     // ===== 配置 =====
     const skinPresets = [
@@ -247,7 +355,6 @@
       { color: 0x8FA8B8, name: '灰狼', emissive: 0x111822 },
       { color: 0xD4A574, name: '金毛', emissive: 0x2A1A0A },
     ];
-
     const bonePresets = [
       { color: 0xFFF8F0, name: '象牙' },
       { color: 0xE8DCC8, name: '米白' },
@@ -258,14 +365,18 @@
 
     let scene, camera, renderer, controls;
     let animalGroup, boneGroup, skinGroup;
+    let skinMaterials = [], boneMaterials = [];
     let currentSkinIndex = 0, currentBoneIndex = 0;
     let showBone = true, showSkin = true;
     let clock = new THREE.Clock();
+    let raycaster = new THREE.Raycaster();
+    let mouse = new THREE.Vector2(-999, -999);
+    let xRayRadius = 1.2, xRayStrength = 0.75;
+    let hasUploadedSkin = false, hasUploadedBone = false;
 
-    // ===== 初始化场景 =====
+    // ===== 初始化 =====
     function init() {
       const container = document.getElementById('canvas-container');
-
       scene = new THREE.Scene();
       scene.background = new THREE.Color(0xFFF8F0);
       scene.fog = new THREE.Fog(0xFFF8F0, 8, 25);
@@ -293,302 +404,346 @@
 
       setupLights();
       setupGround();
-      createAnimal();
+      createDefaultAnimal();
       setupUI();
+      setupMouseTracking();
 
-      document.getElementById('loading').style.display = 'none';
-
+      document.getElementById('loading').classList.add('hidden');
       window.addEventListener('resize', onResize);
       animate();
     }
 
     function setupLights() {
-      const ambient = new THREE.AmbientLight(0xFFF0E0, 0.6);
-      scene.add(ambient);
+      scene.add(new THREE.AmbientLight(0xFFF0E0, 0.6));
+      const main = new THREE.DirectionalLight(0xFFE8D0, 1.2);
+      main.position.set(3, 6, 4);
+      main.castShadow = true;
+      main.shadow.mapSize.set(2048, 2048);
+      main.shadow.camera.near = 0.5;
+      main.shadow.camera.far = 20;
+      main.shadow.camera.left = -5;
+      main.shadow.camera.right = 5;
+      main.shadow.camera.top = 5;
+      main.shadow.camera.bottom = -5;
+      main.shadow.bias = -0.001;
+      scene.add(main);
 
-      const mainLight = new THREE.DirectionalLight(0xFFE8D0, 1.2);
-      mainLight.position.set(3, 6, 4);
-      mainLight.castShadow = true;
-      mainLight.shadow.mapSize.width = 2048;
-      mainLight.shadow.mapSize.height = 2048;
-      mainLight.shadow.camera.near = 0.5;
-      mainLight.shadow.camera.far = 20;
-      mainLight.shadow.camera.left = -5;
-      mainLight.shadow.camera.right = 5;
-      mainLight.shadow.camera.top = 5;
-      mainLight.shadow.camera.bottom = -5;
-      mainLight.shadow.bias = -0.001;
-      scene.add(mainLight);
+      const fill = new THREE.DirectionalLight(0xE0E8FF, 0.4);
+      fill.position.set(-3, 3, -2);
+      scene.add(fill);
 
-      const fillLight = new THREE.DirectionalLight(0xE0E8FF, 0.4);
-      fillLight.position.set(-3, 3, -2);
-      scene.add(fillLight);
-
-      const rimLight = new THREE.PointLight(0xFFD4A0, 0.5, 10);
-      rimLight.position.set(0, 2, -3);
-      scene.add(rimLight);
+      const rim = new THREE.PointLight(0xFFD4A0, 0.5, 10);
+      rim.position.set(0, 2, -3);
+      scene.add(rim);
     }
 
     function setupGround() {
-      const groundGeo = new THREE.CircleGeometry(8, 64);
-      const groundMat = new THREE.MeshStandardMaterial({
-        color: 0xF5EDE0,
-        roughness: 0.9,
-        metalness: 0,
-      });
-      const ground = new THREE.Mesh(groundGeo, groundMat);
-      ground.rotation.x = -Math.PI / 2;
-      ground.receiveShadow = true;
-      scene.add(ground);
+      const g = new THREE.Mesh(
+        new THREE.CircleGeometry(8, 64),
+        new THREE.MeshStandardMaterial({ color: 0xF5EDE0, roughness: 0.9 })
+      );
+      g.rotation.x = -Math.PI / 2;
+      g.receiveShadow = true;
+      scene.add(g);
 
-      // 装饰小圆点
       for (let i = 0; i < 20; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const radius = 1.5 + Math.random() * 4;
-        const dot = new THREE.Mesh(
+        const a = Math.random() * Math.PI * 2;
+        const r = 1.5 + Math.random() * 4;
+        const d = new THREE.Mesh(
           new THREE.CircleGeometry(0.03 + Math.random() * 0.04, 16),
           new THREE.MeshBasicMaterial({ color: 0xE8D8C8, transparent: true, opacity: 0.5 })
         );
-        dot.rotation.x = -Math.PI / 2;
-        dot.position.set(Math.cos(angle) * radius, 0.005, Math.sin(angle) * radius);
-        scene.add(dot);
+        d.rotation.x = -Math.PI / 2;
+        d.position.set(Math.cos(a) * r, 0.005, Math.sin(a) * r);
+        scene.add(d);
       }
     }
 
-    // ===== 创建动物 =====
-    function createAnimal() {
+    // ===== X-Ray Shader =====
+    function setupXRayMaterial(mat) {
+      skinMaterials.push(mat);
+      mat.onBeforeCompile = (shader) => {
+        shader.uniforms.uHoverPoint = { value: new THREE.Vector3(9999, 9999, 9999) };
+        shader.uniforms.uHoverRadius = { value: xRayRadius };
+        shader.uniforms.uHoverStrength = { value: xRayStrength };
+
+        shader.vertexShader = shader.vertexShader.replace(
+          '#include <common>',
+          `#include <common>\nvarying vec3 vWorldPosition;`
+        );
+        shader.vertexShader = shader.vertexShader.replace(
+          '#include <worldpos_vertex>',
+          `#include <worldpos_vertex>\nvWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;`
+        );
+        shader.fragmentShader = shader.fragmentShader.replace(
+          '#include <common>',
+          `#include <common>\nuniform vec3 uHoverPoint;\nuniform float uHoverRadius;\nuniform float uHoverStrength;\nvarying vec3 vWorldPosition;`
+        );
+        shader.fragmentShader = shader.fragmentShader.replace(
+          '#include <opaque_fragment>',
+          `#include <opaque_fragment>\nfloat dist = distance(vWorldPosition, uHoverPoint);\nfloat hoverFactor = 1.0 - smoothstep(0.0, uHoverRadius, dist);\nfloat alpha = mix(1.0, 1.0 - uHoverStrength, hoverFactor);\ngl_FragColor.a *= alpha;`
+        );
+        mat.userData.shader = shader;
+      };
+    }
+
+    function updateXRayUniforms() {
+      skinMaterials.forEach(mat => {
+        if (mat.userData.shader) {
+          mat.userData.shader.uniforms.uHoverRadius.value = xRayRadius;
+          mat.userData.shader.uniforms.uHoverStrength.value = xRayStrength;
+        }
+      });
+    }
+
+    function setHoverPoint(point) {
+      skinMaterials.forEach(mat => {
+        if (mat.userData.shader) {
+          mat.userData.shader.uniforms.uHoverPoint.value.copy(point);
+        }
+      });
+    }
+
+    function clearHoverPoint() {
+      skinMaterials.forEach(mat => {
+        if (mat.userData.shader) {
+          mat.userData.shader.uniforms.uHoverPoint.value.set(9999, 9999, 9999);
+        }
+      });
+    }
+
+    // ===== 默认动物 =====
+    function createDefaultAnimal() {
       animalGroup = new THREE.Group();
       boneGroup = new THREE.Group();
       skinGroup = new THREE.Group();
+      skinMaterials = [];
+      boneMaterials = [];
 
       const skinMat = createSkinMaterial(skinPresets[0]);
       const boneMat = createBoneMaterial(bonePresets[0]);
 
-      // --- 身体 ---
-      // 骨骼：脊柱
-      const spine = createBone(new THREE.CylinderGeometry(0.06, 0.08, 1.0, 8), boneMat);
-      spine.position.set(0, 0.65, 0);
-      spine.rotation.z = Math.PI / 2;
-      boneGroup.add(spine);
-
-      // 外皮：躯干
-      const body = createSkin(new THREE.SphereGeometry(0.55, 32, 32), skinMat);
-      body.scale.set(1, 0.85, 0.9);
-      body.position.set(0, 0.65, 0);
-      skinGroup.add(body);
-
-      // --- 头部 ---
-      // 骨骼：头骨
-      const skull = createBone(new THREE.SphereGeometry(0.22, 16, 16), boneMat);
-      skull.position.set(0.75, 1.15, 0);
-      boneGroup.add(skull);
-
+      // 脊柱
+      addBone(new THREE.CylinderGeometry(0.06, 0.08, 1.0, 8), boneMat, [0, 0.65, 0], [0, 0, Math.PI / 2]);
+      // 躯干
+      addSkin(new THREE.SphereGeometry(0.55, 32, 32), skinMat, [0, 0.65, 0], [1, 0.85, 0.9]);
+      // 头骨
+      addBone(new THREE.SphereGeometry(0.22, 16, 16), boneMat, [0.75, 1.15, 0]);
       // 颈椎
-      const neck = createBone(new THREE.CylinderGeometry(0.05, 0.06, 0.3, 8), boneMat);
-      neck.position.set(0.5, 1.0, 0);
-      neck.rotation.z = -Math.PI / 4;
-      boneGroup.add(neck);
-
-      // 外皮：头
-      const head = createSkin(new THREE.SphereGeometry(0.38, 32, 32), skinMat);
-      head.position.set(0.78, 1.15, 0);
-      skinGroup.add(head);
-
+      addBone(new THREE.CylinderGeometry(0.05, 0.06, 0.3, 8), boneMat, [0.5, 1.0, 0], [0, 0, -Math.PI / 4]);
+      // 头部
+      addSkin(new THREE.SphereGeometry(0.38, 32, 32), skinMat, [0.78, 1.15, 0]);
       // 吻部
-      const snout = createSkin(new THREE.SphereGeometry(0.18, 24, 24), skinMat);
-      snout.scale.set(1, 0.7, 0.8);
-      snout.position.set(1.08, 1.05, 0);
-      skinGroup.add(snout);
-
+      addSkin(new THREE.SphereGeometry(0.18, 24, 24), skinMat, [1.08, 1.05, 0], [1, 0.7, 0.8]);
       // 鼻子
-      const nose = createSkin(new THREE.SphereGeometry(0.06, 16, 16),
-        new THREE.MeshStandardMaterial({ color: 0x3A2A1A, roughness: 0.6 }));
-      nose.position.set(1.22, 1.08, 0);
-      skinGroup.add(nose);
+      addSkin(new THREE.SphereGeometry(0.06, 16, 16),
+        new THREE.MeshStandardMaterial({ color: 0x3A2A1A, roughness: 0.6 }), [1.22, 1.08, 0]);
 
       // 眼睛
-      const eyeWhite = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.3 });
-      const eyePupil = new THREE.MeshStandardMaterial({ color: 0x1A1A1A, roughness: 0.2 });
-      const eyeHighlight = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, emissive: 0x444444 });
-
-      [-1, 1].forEach(side => {
-        const eyeW = new THREE.Mesh(new THREE.SphereGeometry(0.09, 16, 16), eyeWhite);
-        eyeW.position.set(1.05, 1.22, side * 0.18);
-        skinGroup.add(eyeW);
-
-        const eyeP = new THREE.Mesh(new THREE.SphereGeometry(0.055, 16, 16), eyePupil);
-        eyeP.position.set(1.1, 1.22, side * 0.18);
-        skinGroup.add(eyeP);
-
-        const eyeH = new THREE.Mesh(new THREE.SphereGeometry(0.025, 8, 8), eyeHighlight);
-        eyeH.position.set(1.08, 1.25, side * 0.16);
-        skinGroup.add(eyeH);
+      const eyeW = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.3 });
+      const eyeP = new THREE.MeshStandardMaterial({ color: 0x1A1A1A, roughness: 0.2 });
+      const eyeH = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, emissive: 0x444444 });
+      [-1, 1].forEach(s => {
+        addToGroup(skinGroup, new THREE.Mesh(new THREE.SphereGeometry(0.09, 16, 16), eyeW), [1.05, 1.22, s * 0.18]);
+        addToGroup(skinGroup, new THREE.Mesh(new THREE.SphereGeometry(0.055, 16, 16), eyeP), [1.1, 1.22, s * 0.18]);
+        addToGroup(skinGroup, new THREE.Mesh(new THREE.SphereGeometry(0.025, 8, 8), eyeH), [1.08, 1.25, s * 0.16]);
       });
 
       // 耳朵
-      [-1, 1].forEach(side => {
-        // 骨骼
-        const earBone = createBone(new THREE.CylinderGeometry(0.02, 0.03, 0.25, 8), boneMat);
-        earBone.position.set(0.65, 1.5, side * 0.28);
-        earBone.rotation.z = side * 0.3;
-        earBone.rotation.x = side * 0.2;
-        boneGroup.add(earBone);
-
-        // 外皮
-        const ear = createSkin(new THREE.SphereGeometry(0.12, 24, 24), skinMat);
-        ear.scale.set(0.6, 1, 0.5);
-        ear.position.set(0.65, 1.5, side * 0.28);
-        ear.rotation.z = side * 0.3;
-        skinGroup.add(ear);
-
-        // 耳内
-        const earInner = createSkin(new THREE.SphereGeometry(0.07, 16, 16),
-          new THREE.MeshStandardMaterial({
-            color: 0xFFDDD0,
-            roughness: 0.8,
-            transparent: true,
-            opacity: 0.7
-          }));
-        earInner.scale.set(0.5, 0.9, 0.4);
-        earInner.position.set(0.63, 1.5, side * 0.25);
-        earInner.rotation.z = side * 0.3;
-        skinGroup.add(earInner);
+      [-1, 1].forEach(s => {
+        addBone(new THREE.CylinderGeometry(0.02, 0.03, 0.25, 8), boneMat, [0.65, 1.5, s * 0.28], [s * 0.2, 0, s * 0.3]);
+        addSkin(new THREE.SphereGeometry(0.12, 24, 24), skinMat, [0.65, 1.5, s * 0.28], [0.6, 1, 0.5], [s * 0.3, 0, 0]);
+        addSkin(new THREE.SphereGeometry(0.07, 16, 16),
+          new THREE.MeshStandardMaterial({ color: 0xFFDDD0, roughness: 0.8, transparent: true, opacity: 0.7 }),
+          [0.63, 1.5, s * 0.25], [0.5, 0.9, 0.4], [s * 0.3, 0, 0]);
       });
 
-      // --- 四肢 ---
-      const legPositions = [
-        { x: 0.35, z: 0.25, name: 'frontL' },
-        { x: 0.35, z: -0.25, name: 'frontR' },
-        { x: -0.35, z: 0.25, name: 'backL' },
-        { x: -0.35, z: -0.25, name: 'backR' },
-      ];
-
-      legPositions.forEach(pos => {
-        const isFront = pos.x > 0;
-        const yBone = 0.35;
-
-        // 骨骼：腿骨（上）
-        const upperLegBone = createBone(new THREE.CylinderGeometry(0.04, 0.05, 0.4, 8), boneMat);
-        upperLegBone.position.set(pos.x, yBone + 0.15, pos.z);
-        boneGroup.add(upperLegBone);
-
-        // 骨骼：腿骨（下）
-        const lowerLegBone = createBone(new THREE.CylinderGeometry(0.03, 0.04, 0.35, 8), boneMat);
-        lowerLegBone.position.set(pos.x, yBone - 0.15, pos.z);
-        boneGroup.add(lowerLegBone);
-
-        // 外皮：腿（上）
-        const upperLeg = createSkin(new THREE.SphereGeometry(0.16, 24, 24), skinMat);
-        upperLeg.scale.set(0.7, 1.1, 0.7);
-        upperLeg.position.set(pos.x, yBone + 0.1, pos.z);
-        skinGroup.add(upperLeg);
-
-        // 外皮：腿（下）
-        const lowerLeg = createSkin(new THREE.SphereGeometry(0.13, 24, 24), skinMat);
-        lowerLeg.scale.set(0.65, 1.2, 0.65);
-        lowerLeg.position.set(pos.x, yBone - 0.15, pos.z);
-        skinGroup.add(lowerLeg);
-
-        // 爪子
-        const paw = createSkin(new THREE.SphereGeometry(0.1, 16, 16), skinMat);
-        paw.scale.set(1, 0.5, 1.2);
-        paw.position.set(pos.x, 0.05, pos.z);
-        skinGroup.add(paw);
+      // 四肢
+      [[0.35, 0.25], [0.35, -0.25], [-0.35, 0.25], [-0.35, -0.25]].forEach(([x, z]) => {
+        addBone(new THREE.CylinderGeometry(0.04, 0.05, 0.4, 8), boneMat, [x, 0.5, z]);
+        addBone(new THREE.CylinderGeometry(0.03, 0.04, 0.35, 8), boneMat, [x, 0.15, z]);
+        addSkin(new THREE.SphereGeometry(0.16, 24, 24), skinMat, [x, 0.75, z], [0.7, 1.1, 0.7]);
+        addSkin(new THREE.SphereGeometry(0.13, 24, 24), skinMat, [x, 0.4, z], [0.65, 1.2, 0.65]);
+        addSkin(new THREE.SphereGeometry(0.1, 16, 16), skinMat, [x, 0.05, z], [1, 0.5, 1.2]);
       });
 
-      // --- 尾巴 ---
-      // 骨骼：尾椎
+      // 尾巴骨骼
       for (let i = 0; i < 5; i++) {
-        const tailBone = createBone(new THREE.SphereGeometry(0.03 - i * 0.004, 8, 8), boneMat);
-        tailBone.position.set(-0.6 - i * 0.12, 0.55 + i * 0.05, 0);
-        boneGroup.add(tailBone);
+        addBone(new THREE.SphereGeometry(0.03 - i * 0.004, 8, 8), boneMat, [-0.6 - i * 0.12, 0.55 + i * 0.05, 0]);
       }
-
-      // 外皮：尾巴
+      // 尾巴外皮
       const tailCurve = new THREE.CatmullRomCurve3([
         new THREE.Vector3(-0.55, 0.55, 0),
         new THREE.Vector3(-0.75, 0.65, 0.05),
         new THREE.Vector3(-0.95, 0.75, 0),
         new THREE.Vector3(-1.1, 0.8, -0.05),
       ]);
-      const tailGeo = new THREE.TubeGeometry(tailCurve, 16, 0.1, 12, false);
-      const tail = createSkin(tailGeo, skinMat);
-      skinGroup.add(tail);
-
-      // 尾巴尖端
-      const tailTip = createSkin(new THREE.SphereGeometry(0.1, 16, 16), skinMat);
-      tailTip.position.set(-1.1, 0.8, -0.05);
-      skinGroup.add(tailTip);
+      addSkin(new THREE.TubeGeometry(tailCurve, 16, 0.1, 12, false), skinMat);
+      addSkin(new THREE.SphereGeometry(0.1, 16, 16), skinMat, [-1.1, 0.8, -0.05]);
 
       animalGroup.add(boneGroup);
       animalGroup.add(skinGroup);
       scene.add(animalGroup);
-
-      // 保存材质引用以便后续更新
-      animalGroup.userData.skinMat = skinMat;
-      animalGroup.userData.boneMat = boneMat;
-      animalGroup.userData.bodyParts = [body, head, snout, tail, tailTip];
-      animalGroup.userData.legParts = [];
-      legPositions.forEach((pos, i) => {
-        animalGroup.userData.legParts.push(skinGroup.children.find(c =>
-          c.position.x === pos.x && c.position.y > 0.3 && Math.abs(c.position.z - pos.z) < 0.01
-        ));
-      });
     }
 
-    function createSkin(geometry, material) {
-      const mesh = new THREE.Mesh(geometry, material);
+    function addSkin(geo, mat, pos, scale, rot) {
+      const mesh = new THREE.Mesh(geo, mat);
+      if (pos) mesh.position.set(...pos);
+      if (scale) mesh.scale.set(...scale);
+      if (rot) mesh.rotation.set(...rot);
       mesh.castShadow = true;
       mesh.receiveShadow = true;
-      return mesh;
+      skinGroup.add(mesh);
     }
 
-    function createBone(geometry, material) {
-      const mesh = new THREE.Mesh(geometry, material);
+    function addBone(geo, mat, pos, rot) {
+      const mesh = new THREE.Mesh(geo, mat);
+      if (pos) mesh.position.set(...pos);
+      if (rot) mesh.rotation.set(...rot);
       mesh.castShadow = true;
-      return mesh;
+      boneGroup.add(mesh);
+    }
+
+    function addToGroup(group, mesh, pos) {
+      if (pos) mesh.position.set(...pos);
+      group.add(mesh);
     }
 
     function createSkinMaterial(preset) {
-      return new THREE.MeshStandardMaterial({
+      const mat = new THREE.MeshStandardMaterial({
         color: preset.color,
         roughness: 0.75,
         metalness: 0.05,
         emissive: preset.emissive,
         emissiveIntensity: 0.1,
+        transparent: true,
       });
+      setupXRayMaterial(mat);
+      return mat;
     }
 
     function createBoneMaterial(preset) {
-      return new THREE.MeshStandardMaterial({
+      const mat = new THREE.MeshStandardMaterial({
         color: preset.color,
         roughness: 0.4,
         metalness: 0.1,
         emissive: preset.color,
         emissiveIntensity: 0.15,
       });
+      boneMaterials.push(mat);
+      return mat;
     }
 
-    // ===== UI 设置 =====
-    function setupUI() {
-      const skinContainer = document.getElementById('skin-colors');
-      skinPresets.forEach((preset, i) => {
-        const btn = document.createElement('div');
-        btn.className = 'color-btn' + (i === 0 ? ' selected' : '');
-        btn.style.backgroundColor = '#' + preset.color.toString(16).padStart(6, '0');
-        btn.title = preset.name;
-        btn.onclick = () => selectSkin(i);
-        skinContainer.appendChild(btn);
+    // ===== 模型上传 =====
+    function normalizeModel(group, targetSize = 2.0) {
+      const box = new THREE.Box3().setFromObject(group);
+      const size = new THREE.Vector3();
+      box.getSize(size);
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const scale = targetSize / maxDim;
+      group.scale.setScalar(scale);
+
+      const center = new THREE.Vector3();
+      box.getCenter(center);
+      group.position.sub(center.multiplyScalar(scale));
+      group.position.y += 0.6;
+    }
+
+    function clearGroup(group) {
+      while (group.children.length > 0) {
+        const child = group.children[0];
+        group.remove(child);
+        if (child.geometry) child.geometry.dispose();
+        if (child.material) {
+          if (Array.isArray(child.material)) child.material.forEach(m => m.dispose());
+          else child.material.dispose();
+        }
+      }
+    }
+
+    window.handleUpload = (event, type) => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const arrayBuffer = e.target.result;
+        const ext = file.name.split('.').pop().toLowerCase();
+
+        if (ext === 'glb' || ext === 'gltf') {
+          const loader = new GLTFLoader();
+          loader.parse(arrayBuffer, '', (gltf) => {
+            applyUploadedModel(gltf.scene, type);
+            showToast(`已加载 ${type === 'skin' ? '外皮' : '骨骼'} 模型: ${file.name}`);
+          }, (err) => {
+            showToast('模型加载失败: ' + err.message);
+          });
+        } else if (ext === 'obj') {
+          const text = new TextDecoder().decode(arrayBuffer);
+          const loader = new OBJLoader();
+          const obj = loader.parse(text);
+          applyUploadedModel(obj, type);
+          showToast(`已加载 ${type === 'skin' ? '外皮' : '骨骼'} 模型: ${file.name}`);
+        } else {
+          showToast('不支持的格式，请使用 .glb/.gltf/.obj');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    };
+
+    function applyUploadedModel(model, type) {
+      const targetGroup = type === 'skin' ? skinGroup : boneGroup;
+      const mat = type === 'skin'
+        ? createSkinMaterial(skinPresets[currentSkinIndex])
+        : createBoneMaterial(bonePresets[currentBoneIndex]);
+
+      clearGroup(targetGroup);
+
+      model.traverse((child) => {
+        if (child.isMesh) {
+          const newMesh = new THREE.Mesh(child.geometry.clone(), mat);
+          newMesh.position.copy(child.position);
+          newMesh.rotation.copy(child.rotation);
+          newMesh.scale.copy(child.scale);
+          newMesh.castShadow = true;
+          if (type === 'skin') newMesh.receiveShadow = true;
+          targetGroup.add(newMesh);
+        }
       });
 
-      const boneContainer = document.getElementById('bone-colors');
-      bonePresets.forEach((preset, i) => {
-        const btn = document.createElement('div');
-        btn.className = 'color-btn' + (i === 0 ? ' selected' : '');
-        btn.style.backgroundColor = '#' + preset.color.toString(16).padStart(6, '0');
-        btn.title = preset.name;
-        btn.onclick = () => selectBone(i);
-        boneContainer.appendChild(btn);
+      normalizeModel(targetGroup);
+
+      if (type === 'skin') {
+        hasUploadedSkin = true;
+        document.getElementById('btn-upload-skin').classList.add('has-file');
+        document.getElementById('btn-upload-skin').textContent = '✅ 已上传外皮';
+      } else {
+        hasUploadedBone = true;
+        document.getElementById('btn-upload-bone').classList.add('has-file');
+        document.getElementById('btn-upload-bone').textContent = '✅ 已上传骨骼';
+      }
+    }
+
+    // ===== UI =====
+    function setupUI() {
+      const sc = document.getElementById('skin-colors');
+      skinPresets.forEach((p, i) => {
+        const b = document.createElement('div');
+        b.className = 'color-btn' + (i === 0 ? ' selected' : '');
+        b.style.backgroundColor = '#' + p.color.toString(16).padStart(6, '0');
+        b.title = p.name;
+        b.onclick = () => selectSkin(i);
+        sc.appendChild(b);
+      });
+
+      const bc = document.getElementById('bone-colors');
+      bonePresets.forEach((p, i) => {
+        const b = document.createElement('div');
+        b.className = 'color-btn' + (i === 0 ? ' selected' : '');
+        b.style.backgroundColor = '#' + p.color.toString(16).padStart(6, '0');
+        b.title = p.name;
+        b.onclick = () => selectBone(i);
+        bc.appendChild(b);
       });
 
       window.toggleBone = () => {
@@ -596,36 +751,70 @@
         boneGroup.visible = showBone;
         document.getElementById('toggle-bone').classList.toggle('active', showBone);
       };
-
       window.toggleSkin = () => {
         showSkin = !showSkin;
         skinGroup.visible = showSkin;
         document.getElementById('toggle-skin').classList.toggle('active', showSkin);
       };
-
-      window.selectSkin = (index) => {
-        currentSkinIndex = index;
-        const preset = skinPresets[index];
-        const mat = animalGroup.userData.skinMat;
-        mat.color.setHex(preset.color);
-        mat.emissive.setHex(preset.emissive);
-
-        document.querySelectorAll('#skin-colors .color-btn').forEach((btn, i) => {
-          btn.classList.toggle('selected', i === index);
+      window.selectSkin = (i) => {
+        currentSkinIndex = i;
+        const p = skinPresets[i];
+        skinMaterials.forEach(m => {
+          m.color.setHex(p.color);
+          m.emissive.setHex(p.emissive);
         });
+        document.querySelectorAll('#skin-colors .color-btn').forEach((b, j) => b.classList.toggle('selected', j === i));
       };
-
-      window.selectBone = (index) => {
-        currentBoneIndex = index;
-        const preset = bonePresets[index];
-        const mat = animalGroup.userData.boneMat;
-        mat.color.setHex(preset.color);
-        mat.emissive.setHex(preset.color);
-
-        document.querySelectorAll('#bone-colors .color-btn').forEach((btn, i) => {
-          btn.classList.toggle('selected', i === index);
+      window.selectBone = (i) => {
+        currentBoneIndex = i;
+        const p = bonePresets[i];
+        boneMaterials.forEach(m => {
+          m.color.setHex(p.color);
+          m.emissive.setHex(p.color);
         });
+        document.querySelectorAll('#bone-colors .color-btn').forEach((b, j) => b.classList.toggle('selected', j === i));
       };
+      window.updateXRayRadius = (v) => {
+        xRayRadius = parseFloat(v);
+        document.getElementById('xray-radius-val').textContent = v;
+        updateXRayUniforms();
+      };
+      window.updateXRayStrength = (v) => {
+        xRayStrength = parseFloat(v);
+        document.getElementById('xray-strength-val').textContent = Math.round(v * 100) + '%';
+        updateXRayUniforms();
+      };
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    // ===== 鼠标追踪 =====
+    function setupMouseTracking() {
+      renderer.domElement.addEventListener('mousemove', (e) => {
+        const rect = renderer.domElement.getBoundingClientRect();
+        mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      });
+      renderer.domElement.addEventListener('mouseleave', () => {
+        mouse.set(-999, -999);
+        clearHoverPoint();
+      });
+    }
+
+    function updateRaycaster() {
+      if (!skinGroup || !showSkin) return;
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(skinGroup.children, true);
+      if (intersects.length > 0) {
+        setHoverPoint(intersects[0].point);
+      } else {
+        clearHoverPoint();
+      }
     }
 
     function onResize() {
@@ -639,18 +828,12 @@
       requestAnimationFrame(animate);
       const t = clock.getElapsedTime();
 
+      updateRaycaster();
+
       if (animalGroup) {
-        // 呼吸动画
         const breathe = 1 + Math.sin(t * 1.5) * 0.015;
         animalGroup.scale.set(breathe, breathe, breathe);
 
-        // 头部轻微摆动
-        const headBone = boneGroup.children.find(c => c.geometry.type === 'SphereGeometry' && c.position.x > 0.5);
-        if (headBone) {
-          headBone.rotation.y = Math.sin(t * 0.8) * 0.05;
-        }
-
-        // 尾巴摇摆
         const tailTip = skinGroup.children.find(c => c.position.x < -1);
         if (tailTip) {
           tailTip.position.y = 0.8 + Math.sin(t * 2.5) * 0.03;
