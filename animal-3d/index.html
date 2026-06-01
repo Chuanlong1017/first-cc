@@ -289,7 +289,11 @@
     </div>
 
     <div class="hint">
-      鼠标悬停在外皮上<br>可看到 X-Ray 透视效果
+      鼠标悬停在外皮上<br>可看到 X-Ray 透视效果<br><br>
+      快捷键：<br>
+      左键拖拽 = 旋转<br>
+      Shift + 中键 = 平移<br>
+      滚轮 = 缩放
     </div>
 
     <div class="toast" id="toast"></div>
@@ -404,6 +408,12 @@
       controls.minDistance = 2;
       controls.maxDistance = 12;
       controls.maxPolarAngle = Math.PI / 2 - 0.05;
+      controls.enablePan = true;
+      controls.mouseButtons = {
+        LEFT: THREE.MOUSE.ROTATE,
+        MIDDLE: THREE.MOUSE.DOLLY,
+        RIGHT: THREE.MOUSE.PAN
+      };
       controls.target.set(0, 0.6, 0);
       controls.update();
 
@@ -812,6 +822,17 @@
       renderer.domElement.addEventListener('mouseleave', () => {
         mouse.set(-999, -999);
         clearHoverPoint();
+      });
+
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Shift' && controls) {
+          controls.mouseButtons.MIDDLE = THREE.MOUSE.PAN;
+        }
+      });
+      window.addEventListener('keyup', (e) => {
+        if (e.key === 'Shift' && controls) {
+          controls.mouseButtons.MIDDLE = THREE.MOUSE.DOLLY;
+        }
       });
     }
 
