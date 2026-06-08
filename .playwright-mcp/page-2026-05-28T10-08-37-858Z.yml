@@ -1,7 +1,0 @@
-- generic [ref=e79]:
-  - generic [ref=e80]: MBTI
-  - heading "16型人格分析测试" [level=1] [ref=e81]
-  - paragraph [ref=e82]: 基于迈尔斯-布里格斯类型指标
-  - paragraph [ref=e83]: 通过 20 道精选题目，探索你的性格特质，发现真实的自己。
-  - button "开始测试" [ref=e84] [cursor=pointer]
-  - paragraph [ref=e86]: 上次测试结果：ESTJ — 总经理（2026/5/28）

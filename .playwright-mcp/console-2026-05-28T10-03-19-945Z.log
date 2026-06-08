@@ -1,4 +1,0 @@
-[      40ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:8888/favicon.ico:0
-[   69190ms] TypeError: Cannot read properties of undefined (reading 'text')
-    at renderQuestion (http://localhost:8888/script.js:103:60)
-    at http://localhost:8888/script.js:133:7
