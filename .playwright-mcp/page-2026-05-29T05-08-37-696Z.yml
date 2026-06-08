@@ -1,0 +1,26 @@
+- generic [ref=e2]:
+  - generic:
+    - heading "萌宠骨骼探秘" [level=1]
+    - paragraph: 拖动旋转 · 滚轮缩放 · 探索小动物的内在世界
+  - generic [ref=e3]:
+    - text: 试试切换骨骼和外皮
+    - text: 观察小可爱的结构吧
+  - generic [ref=e4]:
+    - generic [ref=e6]: 显示骨骼
+    - generic [ref=e9]: 显示外皮
+    - generic [ref=e11]:
+      - generic [ref=e12]: 外皮颜色
+      - generic [ref=e13]:
+        - generic "棕熊" [ref=e14] [cursor=pointer]: ✓
+        - generic "白猫" [ref=e15] [cursor=pointer]
+        - generic "粉兔" [ref=e16] [cursor=pointer]
+        - generic "灰狼" [ref=e17] [cursor=pointer]
+        - generic "金毛" [ref=e18] [cursor=pointer]
+    - generic [ref=e19]:
+      - generic [ref=e20]: 骨骼颜色
+      - generic [ref=e21]:
+        - generic "象牙" [ref=e22] [cursor=pointer]: ✓
+        - generic "米白" [ref=e23] [cursor=pointer]
+        - generic "浅灰" [ref=e24] [cursor=pointer]
+        - generic "暖黄" [ref=e25] [cursor=pointer]
+        - generic "粉骨" [ref=e26] [cursor=pointer]

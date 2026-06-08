@@ -1,0 +1,31 @@
+[    3455ms] [ERROR] Refused to apply style from 'https://www.science.org/pb-assets/css/local-1776780509503.css' because its MIME type ('text/html') is not a supported stylesheet MIME type, and strict MIME checking is enabled. @ https://www.science.org/doi/10.1126/science.adv8389:0
+[    3458ms] [ERROR] Refused to apply style from 'https://www.science.org/products/aaas/releasedAssets/css/build-abc4aa32a81a8fc2228e.css' because its MIME type ('text/html') is not a supported stylesheet MIME type, and strict MIME checking is enabled. @ https://www.science.org/doi/10.1126/science.adv8389:0
+[    3474ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://www.science.org/wro/860851a4842268655d33adad0cecef622c2beb57~product.js:0
+[    3485ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://www.science.org/products/aaas/releasedAssets/js/main.bundle-daa25b0ecf9bffe0c631.js:0
+[    4483ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_CLOSED @ https://securepubads.g.doubleclick.net/tag/js/gpt.js:0
+[    4829ms] [ERROR] Refused to execute script from 'https://www.science.org/products/aaas/releasedAssets/js/main.bundle-daa25b0ecf9bffe0c631.js' because its MIME type ('text/html') is not executable, and strict MIME type checking is enabled. @ https://www.science.org/doi/10.1126/science.adv8389:0
+[    4830ms] [ERROR] Refused to execute script from 'https://www.science.org/wro/860851a4842268655d33adad0cecef622c2beb57~product.js' because its MIME type ('text/html') is not executable, and strict MIME type checking is enabled. @ https://www.science.org/doi/10.1126/science.adv8389:0
+[    5133ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://www.science.org/pb-assets/app-manifest/manifest-1706125904470.json:0
+[    5136ms] [ERROR] Manifest fetch from https://www.science.org/pb-assets/app-manifest/manifest-1706125904470.json failed, code 403 @ https://www.science.org/doi/10.1126/science.adv8389:0
+[    5351ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://www.science.org/pb-assets/app-manifest/manifest-1706125904470.json:0
+[    5353ms] [ERROR] Manifest fetch from https://www.science.org/pb-assets/app-manifest/manifest-1706125904470.json failed, code 403 @ https://www.science.org/doi/10.1126/science.adv8389:0
+[    5423ms] [ERROR] Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOrigin @ https://embed.altmetric.com/assets/embed.js:0
+[    5619ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_CLOSED @ https://securepubads.g.doubleclick.net/tag/js/gpt.js:0
+[    5985ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://fcm.googleapis.com/:0
+[    5985ms] [LOG] OneSignal WebPush >> The browser vendor >> Chrome @ https://www.science.org/pb-assets/service/webpush/webpush-1765430089077.js:614
+[    5985ms] [LOG] OneSignal WebPush >> Google Firebase is supported >> True @ https://www.science.org/pb-assets/service/webpush/webpush-1765430089077.js:614
+[    5987ms] [LOG] OneSignal WebPush >> This page may be eligible. @ https://www.science.org/pb-assets/service/webpush/webpush-1765430089077.js:614
+[    5987ms] [LOG] OneSignal WebPush >> This page is aaasProgram = science @ https://www.science.org/pb-assets/service/webpush/webpush-1765430089077.js:614
+[    5989ms] [LOG] OneSignal WebPush >> Qualifying pageviews by product including this pageview:  @ https://www.science.org/pb-assets/service/webpush/webpush-1765430089077.js:614
+[    5989ms] [LOG] OneSignal WebPush >> {"science":1} @ https://www.science.org/pb-assets/service/webpush/webpush-1765430089077.js:614
+[    5990ms] [LOG] OneSignal WebPush >> History of prompt attempts by publication:  @ https://www.science.org/pb-assets/service/webpush/webpush-1765430089077.js:614
+[    5990ms] [LOG] OneSignal WebPush >> {"science":{"attempts":0,"lasttry":0}} @ https://www.science.org/pb-assets/service/webpush/webpush-1765430089077.js:614
+[    5990ms] [LOG] OneSignal WebPush >> The last prompt display of any type was:  @ https://www.science.org/pb-assets/service/webpush/webpush-1765430089077.js:614
+[    5990ms] [LOG] OneSignal WebPush >> 0 @ https://www.science.org/pb-assets/service/webpush/webpush-1765430089077.js:614
+[    5990ms] [LOG] OneSignal WebPush >> WPdisplayPrompt? No. Criteria has not been met. @ https://www.science.org/pb-assets/service/webpush/webpush-1765430089077.js:614
+[    5990ms] [LOG] OneSignal WebPush >> Setup the OneSignal API @ https://www.science.org/pb-assets/service/webpush/webpush-1765430089077.js:614
+[    5990ms] [LOG] OneSignal WebPush >> The OneSignal application id is applicationID = e35f1e35-8993-4812-85eb-964be3377ef8 @ https://www.science.org/pb-assets/service/webpush/webpush-1765430089077.js:614
+[    6157ms] [LOG] 2025-10-16 12:00 PM America/New_York @ https://www.science.org/pb-assets/schema.org/schema-gen-1724262866983.js:124
+[    6159ms] [LOG] Final:  2025-10-16 12:00 PM America/New_York 2025-10-16T16:00:00.000Z @ https://www.science.org/pb-assets/schema.org/schema-gen-1724262866983.js:126
+[    7452ms] ReferenceError: $ is not defined
+    at https://www.science.org/doi/10.1126/science.adv8389:2535:37

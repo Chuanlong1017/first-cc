@@ -1,0 +1,14 @@
+- generic [ref=e10]:
+  - generic [ref=e13]: 题目 1 / 20
+  - generic [ref=e14]:
+    - generic [ref=e15]:
+      - paragraph [ref=e16]: 在社交聚会中，我通常感到精力充沛，而不是疲惫。
+      - generic [ref=e17]:
+        - generic [ref=e20] [cursor=pointer]: 非常不同意
+        - generic [ref=e23] [cursor=pointer]: 不同意
+        - generic [ref=e26] [cursor=pointer]: 中立
+        - generic [ref=e29] [cursor=pointer]: 同意
+        - generic [ref=e32] [cursor=pointer]: 非常同意
+    - generic [ref=e33]:
+      - button "上一题" [disabled] [ref=e34]
+      - button "下一题" [disabled] [ref=e35] [cursor=pointer]
