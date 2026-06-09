@@ -83,7 +83,7 @@
         <h3>⚙️ 粒子设置</h3>
         <div class="control-row">
           <label>粒子密度</label>
-          <input type="range" id="density" min="500" max="500000" step="500" value="15000">
+          <input type="range" id="density" min="500" max="1000000" step="500" value="15000">
           <span id="densityVal">15000</span>
         </div>
         <div class="control-row">
@@ -106,6 +106,10 @@
             <option value="rainbow">彩虹</option>
             <option value="white">纯白</option>
           </select>
+        </div>
+        <div class="control-row">
+          <label>背景颜色</label>
+          <input type="color" id="bgColor" value="#0a0a0f" style="width:50px;height:28px;border:none;border-radius:6px;cursor:pointer;background:none;padding:0;">
         </div>
         <div class="mode-tag">⚠️ 请选择「模型原色」测试纹理采样</div>
       </div>
@@ -869,6 +873,7 @@ function bindUI() {
   ui.fpsCounter = document.getElementById('fpsCounter');
   ui.particleCount = document.getElementById('particleCount');
   ui.modelInfo = document.getElementById('modelInfo');
+  ui.bgColor = document.getElementById('bgColor');
 
   ui.density.addEventListener('change', () => {
     if (state.geometry) createSystem(state.geometry, parseInt(ui.density.value));
@@ -926,6 +931,16 @@ function bindUI() {
     a.href = renderer.domElement.toDataURL('image/png');
     a.click();
   });
+
+  // 背景颜色
+  ui.bgColor.addEventListener('input', () => {
+    const hex = ui.bgColor.value;
+    const color = new THREE.Color(hex);
+    renderer.setClearColor(color);
+    scene.fog.color.copy(color);
+    document.body.style.background = hex;
+  });
+
   window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();

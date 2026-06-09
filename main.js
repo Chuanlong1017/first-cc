@@ -1012,6 +1012,7 @@ function bindUI() {
   ui.fpsCounter = document.getElementById('fpsCounter');
   ui.particleCount = document.getElementById('particleCount');
   ui.modelInfo = document.getElementById('modelInfo');
+  ui.bgColor = document.getElementById('bgColor');
 
   // 滑块数值同步
   const sliders = [
@@ -1096,6 +1097,15 @@ function bindUI() {
 
   // 截图
   document.getElementById('screenshot').addEventListener('click', takeScreenshot);
+
+  // 背景颜色
+  ui.bgColor.addEventListener('input', () => {
+    const hex = ui.bgColor.value;
+    const color = new THREE.Color(hex);
+    renderer.setClearColor(color);
+    scene.fog.color.copy(color);
+    document.body.style.background = hex;
+  });
 
   // 窗口大小
   window.addEventListener('resize', () => {
