@@ -83,7 +83,7 @@
         <h3>⚙️ 粒子设置</h3>
         <div class="control-row">
           <label>粒子密度</label>
-          <input type="range" id="density" min="500" max="1000000" step="500" value="15000">
+          <input type="range" id="density" min="500" max="5000000" step="500" value="15000">
           <span id="densityVal">15000</span>
         </div>
         <div class="control-row">
@@ -323,10 +323,10 @@ const fs = `
     if (d > 0.5) discard;
     float glow = 1.0 - smoothstep(0.3, 0.5, d);
     if (!uGlow) glow = 1.0;
-    float depthFade = smoothstep(50.0, 5.0, vDepth);
     float twinkle = 0.9 + 0.1 * sin(uTime * 2.0 + vRandom * 100.0);
-    vec3 finalColor = vColor * glow * twinkle * (0.85 + 0.15 * depthFade);
-    float alpha = glow * depthFade * uOpacity;
+    // 不透明粒子：alpha 直接由 uOpacity 控制
+    vec3 finalColor = vColor * glow * twinkle;
+    float alpha = uOpacity;
     #include <logdepthbuf_fragment>
     gl_FragColor = vec4(finalColor, alpha);
   }`;
@@ -485,7 +485,7 @@ function createSystem(geo, count) {
       uGlow: { value: ui.glowEffect.checked }, uOpacity: { value: parseFloat(ui.opacity.value) }
     },
     vertexShader: vs, fragmentShader: fs,
-    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, vertexColors: true
+    transparent: true, depthWrite: true, blending: THREE.NormalBlending, vertexColors: true
   });
   const points = new THREE.Points(particleGeo, mat);
   scene.add(points); state.particles = points;

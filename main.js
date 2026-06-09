@@ -521,23 +521,21 @@ const particleFragmentShader = `
   uniform float uOpacity;
 
   void main() {
-    // 圆形粒子
+    // 圆形粒子（硬边缘）
     vec2 coord = gl_PointCoord - vec2(0.5);
     float dist = length(coord);
     if (dist > 0.5) discard;
 
-    // 边缘发光
+    // 边缘发光（仅影响颜色亮度，不影响透明度）
     float glow = 1.0 - smoothstep(0.3, 0.5, dist);
     if (!uGlow) glow = 1.0;
-
-    // 深度淡化
-    float depthFade = smoothstep(50.0, 5.0, vDepth);
 
     // 闪烁
     float twinkle = 0.9 + 0.1 * sin(uTime * 2.0 + vRandom * 100.0);
 
-    vec3 finalColor = vColor * glow * twinkle * (0.7 + 0.3 * depthFade);
-    float alpha = glow * depthFade * uOpacity;
+    // 不透明粒子：alpha 直接由 uOpacity 控制，不受 glow/depthFade 影响
+    vec3 finalColor = vColor * glow * twinkle;
+    float alpha = uOpacity;
 
     #include <logdepthbuf_fragment>
 
@@ -591,8 +589,8 @@ function createParticleSystem(geo, count) {
     vertexShader: particleVertexShader,
     fragmentShader: particleFragmentShader,
     transparent: true,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
+    depthWrite: true,
+    blending: THREE.NormalBlending,
     vertexColors: true
   });
 
