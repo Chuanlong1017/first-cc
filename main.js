@@ -447,6 +447,9 @@ const particleVertexShader = `
   #define MODE_BREATHE 3
   #define MODE_SPIRAL 4
   #define MODE_ORBIT 5
+  #define MODE_COLLAPSE 6
+  #define MODE_IMPLODE_EXPLODE 7
+  #define MODE_SCATTER 8
 
   void main() {
     vColor = color;
@@ -495,6 +498,37 @@ const particleVertexShader = `
       rotated.z = local.x * s + local.z * c;
       rotated.y = local.y;
       pos = center + rotated;
+    }
+    else if (uAnimMode == MODE_COLLAPSE) {
+      // 收缩汇聚：持续吸入中心点
+      float p = fract(t * 0.15 + random);
+      pos = mix(position, vec3(0.0), smoothstep(0.0, 1.0, p));
+    }
+    else if (uAnimMode == MODE_IMPLODE_EXPLODE) {
+      // 收缩→爆炸：先吸入中心，再从中心膨胀回模型
+      float cycle = 4.0;
+      float phase = mod(t * 0.5 + random * 2.0, cycle);
+      if (phase < 2.0) {
+        float p = phase / 2.0;
+        pos = mix(position, vec3(0.0), smoothstep(0.0, 1.0, p));
+      } else {
+        float p = (phase - 2.0) / 2.0;
+        pos = mix(vec3(0.0), position, smoothstep(0.0, 1.0, p));
+      }
+    }
+    else if (uAnimMode == MODE_SCATTER) {
+      // 散射聚合：随机飞散到远处，再聚合回模型
+      float cycle = 4.0;
+      float phase = mod(t * 0.4 + random * 3.0, cycle);
+      vec3 randomDir = normalize(vec3(random - 0.5, random - 0.5, random - 0.5));
+      float scatterDist = uAnimStrength * 0.15;
+      if (phase < 2.0) {
+        float p = phase / 2.0;
+        pos = mix(position, position + randomDir * scatterDist, smoothstep(0.0, 1.0, p));
+      } else {
+        float p = (phase - 2.0) / 2.0;
+        pos = mix(position + randomDir * scatterDist, position, smoothstep(0.0, 1.0, p));
+      }
     }
 
     vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
@@ -615,7 +649,7 @@ function createParticleSystem(geo, count) {
 }
 
 function animModeToInt(mode) {
-  const map = { none: 0, explode: 1, wave: 2, breathe: 3, spiral: 4, orbit: 5 };
+  const map = { none: 0, explode: 1, wave: 2, breathe: 3, spiral: 4, orbit: 5, collapse: 6, implode_explode: 7, scatter: 8 };
   return map[mode] ?? 0;
 }
 

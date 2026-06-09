@@ -124,6 +124,9 @@
             <option value="explode">爆炸聚合</option>
             <option value="wave">波浪起伏</option>
             <option value="breathe">呼吸脉冲</option>
+            <option value="collapse">收缩汇聚</option>
+            <option value="implode_explode">收缩→爆炸</option>
+            <option value="scatter">散射聚合</option>
           </select>
         </div>
         <div class="control-row">
@@ -289,6 +292,9 @@ const vs = `
   #define MODE_EXPLODE 1
   #define MODE_WAVE 2
   #define MODE_BREATHE 3
+  #define MODE_COLLAPSE 4
+  #define MODE_IMPLODE_EXPLODE 5
+  #define MODE_SCATTER 6
   void main() {
     vColor = color; vRandom = random;
     vec3 pos = position; float t = uTime * uAnimSpeed;
@@ -303,6 +309,31 @@ const vs = `
     } else if (uAnimMode == MODE_BREATHE) {
       float breathe = 1.0 + sin(t * 1.2 + random * 2.0) * uAnimStrength * 0.003;
       pos *= breathe;
+    } else if (uAnimMode == MODE_COLLAPSE) {
+      float p = fract(t * 0.15 + random);
+      pos = mix(position, vec3(0.0), smoothstep(0.0, 1.0, p));
+    } else if (uAnimMode == MODE_IMPLODE_EXPLODE) {
+      float cycle = 4.0;
+      float phase = mod(t * 0.5 + random * 2.0, cycle);
+      if (phase < 2.0) {
+        float p = phase / 2.0;
+        pos = mix(position, vec3(0.0), smoothstep(0.0, 1.0, p));
+      } else {
+        float p = (phase - 2.0) / 2.0;
+        pos = mix(vec3(0.0), position, smoothstep(0.0, 1.0, p));
+      }
+    } else if (uAnimMode == MODE_SCATTER) {
+      float cycle = 4.0;
+      float phase = mod(t * 0.4 + random * 3.0, cycle);
+      vec3 randomDir = normalize(vec3(random - 0.5, random - 0.5, random - 0.5));
+      float scatterDist = uAnimStrength * 0.15;
+      if (phase < 2.0) {
+        float p = phase / 2.0;
+        pos = mix(position, position + randomDir * scatterDist, smoothstep(0.0, 1.0, p));
+      } else {
+        float p = (phase - 2.0) / 2.0;
+        pos = mix(position + randomDir * scatterDist, position, smoothstep(0.0, 1.0, p));
+      }
     }
     vec4 mv = modelViewMatrix * vec4(pos, 1.0);
     vDepth = -mv.z;
@@ -332,7 +363,7 @@ const fs = `
   }`;
 
 function animModeToInt(mode) {
-  return { none: 0, explode: 1, wave: 2, breathe: 3 }[mode] ?? 0;
+  return { none: 0, explode: 1, wave: 2, breathe: 3, collapse: 4, implode_explode: 5, scatter: 6 }[mode] ?? 0;
 }
 
 // ========== 粒子采样 ==========
