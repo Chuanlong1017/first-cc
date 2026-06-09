@@ -42,9 +42,11 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setClearColor(0x0a0a0f);
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x0a0a0f, 0.035);
+// fog 改为动态调整，避免大模型被裁切
+scene.fog = new THREE.FogExp2(0x0a0a0f, 0.002);
 
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+// 无限视距：far 平面设极大值，near 随模型大小动态调整
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.01, 1e6);
 camera.position.set(0, 0, 18);
 
 const controls = new OrbitControls(camera, canvas);
@@ -703,6 +705,20 @@ function centerCamera(geo) {
   camera.lookAt(0, 0, 0);
   controls.target.set(0, 0, 0);
   controls.update();
+
+  // 无限视距：动态调整 near/far，避免大模型被裁切
+  const near = Math.max(0.001, radius * 0.001);
+  const far = Math.max(1e6, radius * 500);
+  if (camera.near !== near || camera.far !== far) {
+    camera.near = near;
+    camera.far = far;
+    camera.updateProjectionMatrix();
+  }
+
+  // 同步调整 fog，让大模型也能完整显示
+  if (scene.fog) {
+    scene.fog.density = Math.min(0.002, 1.5 / (radius * 10 + distance));
+  }
 }
 
 // ========== 预设几何体 ==========

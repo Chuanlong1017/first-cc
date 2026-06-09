@@ -190,9 +190,9 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setClearColor(0x0a0a0f);
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x0a0a0f, 0.02);
+scene.fog = new THREE.FogExp2(0x0a0a0f, 0.002);
 
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.01, 1e6);
 camera.position.set(0, 0, 18);
 
 const controls = new OrbitControls(camera, canvas);
@@ -493,6 +493,18 @@ function createSystem(geo, count) {
   const dist = (radius * 2.5) / Math.tan((camera.fov * Math.PI/180) / 2);
   camera.position.set(0, 0, Math.max(dist, 5));
   controls.target.set(0,0,0); controls.update();
+
+  // 无限视距：动态调整 near/far，避免大模型被裁切
+  const near = Math.max(0.001, radius * 0.001);
+  const far = Math.max(1e6, radius * 500);
+  if (camera.near !== near || camera.far !== far) {
+    camera.near = near;
+    camera.far = far;
+    camera.updateProjectionMatrix();
+  }
+  if (scene.fog) {
+    scene.fog.density = Math.min(0.002, 1.5 / (radius * 10 + dist));
+  }
 
   state.isLoaded = true;
   ui.particleCount.textContent = `粒子数: ${count.toLocaleString()}`;
@@ -902,6 +914,9 @@ function bindUI() {
       const dist = (r * 2.5) / Math.tan((camera.fov * Math.PI/180) / 2);
       camera.position.set(0, 0, Math.max(dist, 5));
       controls.target.set(0,0,0); controls.update();
+      const near = Math.max(0.001, r * 0.001);
+      const far = Math.max(1e6, r * 500);
+      camera.near = near; camera.far = far; camera.updateProjectionMatrix();
     }
   });
   document.getElementById('screenshot').addEventListener('click', () => {
