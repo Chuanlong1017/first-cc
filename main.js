@@ -436,6 +436,7 @@ const particleFragmentShader = `
   uniform float uTime;
   uniform bool uGlow;
   uniform int uAnimMode;
+  uniform float uOpacity;
 
   void main() {
     // 圆形粒子
@@ -454,7 +455,7 @@ const particleFragmentShader = `
     float twinkle = 0.9 + 0.1 * sin(uTime * 2.0 + vRandom * 100.0);
 
     vec3 finalColor = vColor * glow * twinkle * (0.7 + 0.3 * depthFade);
-    float alpha = glow * depthFade;
+    float alpha = glow * depthFade * uOpacity;
 
     gl_FragColor = vec4(finalColor, alpha);
   }
@@ -500,7 +501,8 @@ function createParticleSystem(geo, count) {
       uAnimStrength: { value: parseFloat(ui.animStrength.value) },
       uAnimSpeed: { value: parseFloat(ui.animSpeed.value) },
       uAnimMode: { value: animModeToInt(ui.animMode.value) },
-      uGlow: { value: ui.glowEffect.checked }
+      uGlow: { value: ui.glowEffect.checked },
+      uOpacity: { value: 1.0 }
     },
     vertexShader: particleVertexShader,
     fragmentShader: particleFragmentShader,
@@ -916,6 +918,7 @@ function animate() {
     mat.uniforms.uAnimSpeed.value = parseFloat(ui.animSpeed.value);
     mat.uniforms.uAnimMode.value = animModeToInt(ui.animMode.value);
     mat.uniforms.uGlow.value = ui.glowEffect.checked;
+    mat.uniforms.uOpacity.value = parseFloat(ui.opacity.value);
   }
 
   controls.autoRotate = ui.autoRotate.checked;
@@ -953,6 +956,8 @@ function bindUI() {
   ui.densityVal = document.getElementById('densityVal');
   ui.pointSize = document.getElementById('pointSize');
   ui.pointSizeVal = document.getElementById('pointSizeVal');
+  ui.opacity = document.getElementById('opacity');
+  ui.opacityVal = document.getElementById('opacityVal');
   ui.colorTheme = document.getElementById('colorTheme');
   ui.animMode = document.getElementById('animMode');
   ui.animStrength = document.getElementById('animStrength');
@@ -974,6 +979,7 @@ function bindUI() {
   const sliders = [
     ['density', 'densityVal'],
     ['pointSize', 'pointSizeVal'],
+    ['opacity', 'opacityVal'],
     ['animStrength', 'animStrengthVal'],
     ['animSpeed', 'animSpeedVal'],
     ['rotationSpeed', 'rotationSpeedVal']
@@ -999,6 +1005,13 @@ function bindUI() {
   ui.pointSize.addEventListener('input', () => {
     if (state.particles) {
       updateParticleSizes(state.particles.geometry, parseFloat(ui.pointSize.value), ui.randomSize.checked);
+    }
+  });
+
+  // 透明度改变（实时更新 shader uniform，无需重建粒子）
+  ui.opacity.addEventListener('input', () => {
+    if (state.particles) {
+      state.particles.material.uniforms.uOpacity.value = parseFloat(ui.opacity.value);
     }
   });
 
