@@ -114,6 +114,78 @@ function getMaterialColor(material) {
 }
 
 /**
+ * 为纹理创建 UV 采样器（缩放至 maxSize 以提升性能）
+ * 返回一个函数 (u, v) => THREE.Color
+ */
+function createTextureSampler(texture, maxSize = 512) {
+  const image = texture.image;
+  if (!image || !image.width) return null;
+
+  const canvas = document.createElement('canvas');
+  let w = image.width;
+  let h = image.height;
+  if (w > maxSize || h > maxSize) {
+    const scale = maxSize / Math.max(w, h);
+    w = Math.floor(w * scale);
+    h = Math.floor(h * scale);
+  }
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(image, 0, 0, w, h);
+  const data = ctx.getImageData(0, 0, w, h).data;
+
+  const wrapU = texture.wrapS === THREE.RepeatWrapping;
+  const wrapV = texture.wrapT === THREE.RepeatWrapping;
+
+  return function(u, v) {
+    let tx = wrapU ? (u % 1 + 1) % 1 : Math.max(0, Math.min(1, u));
+    let ty = wrapV ? (v % 1 + 1) % 1 : Math.max(0, Math.min(1, v));
+
+    const px = Math.floor(tx * (w - 1));
+    const py = Math.floor((1 - ty) * (h - 1));
+
+    const idx = (py * w + px) * 4;
+    return new THREE.Color(data[idx] / 255, data[idx + 1] / 255, data[idx + 2] / 255);
+  };
+}
+
+/**
+ * 根据材质和 UV 属性，为 geometry 的每个顶点注入颜色
+ */
+function injectVertexColors(geo, material) {
+  if (geo.attributes.color) return; // 已有顶点颜色，跳过
+
+  const mat = Array.isArray(material) ? material[0] : material;
+  if (!mat) return;
+
+  const uvAttr = geo.attributes.uv;
+  const count = geo.attributes.position.count;
+  const colors = new Float32Array(count * 3);
+
+  if (mat.map && mat.map.image && uvAttr) {
+    // 有纹理 + UV：逐顶点采样纹理颜色
+    const sampler = createTextureSampler(mat.map);
+    for (let i = 0; i < count; i++) {
+      const c = sampler(uvAttr.getX(i), uvAttr.getY(i));
+      colors[i * 3] = c.r;
+      colors[i * 3 + 1] = c.g;
+      colors[i * 3 + 2] = c.b;
+    }
+  } else {
+    // 无纹理：使用材质基础色
+    const c = (mat.color && mat.color.isColor) ? mat.color : new THREE.Color(0xffffff);
+    for (let i = 0; i < count; i++) {
+      colors[i * 3] = c.r;
+      colors[i * 3 + 1] = c.g;
+      colors[i * 3 + 2] = c.b;
+    }
+  }
+
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+}
+
+/**
  * 在 BufferGeometry 表面采样粒子点
  */
 function sampleParticlesFromGeometry(geometry, count) {
@@ -693,41 +765,13 @@ async function loadModelFile(file) {
         const loader = new GLTFLoader();
         const gltf = await loader.loadAsync(url);
 
-        // 先收集所有材质，为带纹理的材质采样平均色
-        const materials = new Set();
-        gltf.scene.traverse(child => {
-          if (child.isMesh && child.material) {
-            if (Array.isArray(child.material)) {
-              child.material.forEach(m => materials.add(m));
-            } else {
-              materials.add(child.material);
-            }
-          }
-        });
-        for (const mat of materials) {
-          if (mat.map && mat.map.image) {
-            const avgColor = sampleTextureAverageColor(mat.map);
-            mat.color.set(avgColor);
-          }
-        }
-
         const meshes = [];
         gltf.scene.traverse(child => {
           if (child.isMesh && child.geometry) {
             const geo = child.geometry.clone();
 
-            // 注入颜色：优先顶点颜色，其次材质颜色（已包含纹理采样结果）
-            if (!geo.attributes.color) {
-              const matColor = getMaterialColor(child.material);
-              const count = geo.attributes.position.count;
-              const colors = new Float32Array(count * 3);
-              for (let i = 0; i < count; i++) {
-                colors[i * 3] = matColor.r;
-                colors[i * 3 + 1] = matColor.g;
-                colors[i * 3 + 2] = matColor.b;
-              }
-              geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-            }
+            // 注入真实颜色：有纹理+UV则逐顶点采样纹理，否则用材质色
+            injectVertexColors(geo, child.material);
 
             meshes.push(geo);
           }
@@ -744,19 +788,7 @@ async function loadModelFile(file) {
         fbx.traverse(child => {
           if (child.isMesh && child.geometry) {
             const geo = child.geometry.clone();
-
-            if (!geo.attributes.color && child.material) {
-              const matColor = getMaterialColor(child.material);
-              const count = geo.attributes.position.count;
-              const colors = new Float32Array(count * 3);
-              for (let i = 0; i < count; i++) {
-                colors[i * 3] = matColor.r;
-                colors[i * 3 + 1] = matColor.g;
-                colors[i * 3 + 2] = matColor.b;
-              }
-              geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-            }
-
+            injectVertexColors(geo, child.material);
             meshes.push(geo);
           }
         });
@@ -807,18 +839,8 @@ function mergeGeometries(obj) {
       const geo = child.geometry.clone();
       geo.applyMatrix4(child.matrixWorld);
 
-      // 没有顶点颜色时，用材质颜色填充（支持纹理采样）
-      if (!geo.attributes.color && child.material) {
-        const matColor = getMaterialColor(child.material);
-        const count = geo.attributes.position.count;
-        const colors = new Float32Array(count * 3);
-        for (let i = 0; i < count; i++) {
-          colors[i * 3] = matColor.r;
-          colors[i * 3 + 1] = matColor.g;
-          colors[i * 3 + 2] = matColor.b;
-        }
-        geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-      }
+      // 注入真实颜色：优先逐顶点纹理采样，其次材质基础色
+      injectVertexColors(geo, child.material);
 
       geometries.push(geo);
     }

@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D 粒子颜色测试站</title>
+  <link rel="stylesheet" href="styles.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+  <style>
+    .test-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .test-btn {
+      padding: 10px 4px;
+      background: rgba(0, 229, 255, 0.08);
+      border: 1px dashed rgba(0, 229, 255, 0.4);
+      border-radius: 8px;
+      color: var(--accent-cyan);
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+    .test-btn:hover {
+      background: rgba(0, 229, 255, 0.2);
+      border-style: solid;
+    }
+    .test-preview {
+      width: 100%;
+      height: 48px;
+      border-radius: 4px;
+      margin-bottom: 6px;
+      image-rendering: pixelated;
+    }
+    .mode-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      background: rgba(255, 42, 109, 0.15);
+      border: 1px solid rgba(255, 42, 109, 0.3);
+      border-radius: 4px;
+      color: #ff2a6d;
+      font-size: 0.7rem;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <canvas id="canvas"></canvas>
+
+    <div id="ui-panel" class="panel">
+      <h1>🧪 粒子颜色测试站</h1>
+
+      <!-- 测试模型 -->
+      <div class="section">
+        <h3>🎯 测试模型（点击加载）</h3>
+        <p class="hint">这些模型带有程序化纹理，用于验证颜色采样</p>
+        <div class="test-grid" id="testModels"></div>
+      </div>
+
+      <!-- 上传 -->
+      <div class="section">
+        <label class="btn-upload">
+          <input type="file" id="modelInput" accept=".obj,.gltf,.glb,.fbx,.stl,.ply">
+          📁 上传 3D 模型
+        </label>
+        <p class="hint">支持 .obj, .gltf, .glb, .fbx, .stl, .ply</p>
+        <div id="modelInfo" class="model-info hidden"></div>
+      </div>
+
+      <!-- 粒子设置 -->
+      <div class="section">
+        <h3>⚙️ 粒子设置</h3>
+        <div class="control-row">
+          <label>粒子密度</label>
+          <input type="range" id="density" min="500" max="50000" step="500" value="15000">
+          <span id="densityVal">15000</span>
+        </div>
+        <div class="control-row">
+          <label>粒子大小</label>
+          <input type="range" id="pointSize" min="0.1" max="5" step="0.1" value="1.2">
+          <span id="pointSizeVal">1.2</span>
+        </div>
+        <div class="control-row">
+          <label>粒子透明度</label>
+          <input type="range" id="opacity" min="0.1" max="1" step="0.05" value="1.0">
+          <span id="opacityVal">1.0</span>
+        </div>
+        <div class="control-row">
+          <label>颜色模式</label>
+          <select id="colorTheme">
+            <option value="original" selected>🎨 模型原色（测试重点）</option>
+            <option value="cyan">赛博青</option>
+            <option value="fire">火焰红</option>
+            <option value="neon">霓虹紫</option>
+            <option value="rainbow">彩虹</option>
+            <option value="white">纯白</option>
+          </select>
+        </div>
+        <div class="mode-tag">⚠️ 请选择「模型原色」测试纹理采样</div>
+      </div>
+
+      <!-- 动画 -->
+      <div class="section">
+        <h3>🎬 动画</h3>
+        <div class="control-row">
+          <label>动画模式</label>
+          <select id="animMode">
+            <option value="none" selected>静止（方便观察）</option>
+            <option value="explode">爆炸聚合</option>
+            <option value="wave">波浪起伏</option>
+            <option value="breathe">呼吸脉冲</option>
+          </select>
+        </div>
+        <div class="control-row">
+          <label>动画强度</label>
+          <input type="range" id="animStrength" min="0" max="200" step="1" value="50">
+          <span id="animStrengthVal">50</span>
+        </div>
+      </div>
+
+      <!-- 显示选项 -->
+      <div class="section">
+        <h3>👁️ 显示选项</h3>
+        <div class="checkbox-row">
+          <input type="checkbox" id="autoRotate" checked>
+          <label for="autoRotate">自动旋转</label>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="glowEffect">
+          <label for="glowEffect">发光效果（关闭更易看清原色）</label>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="showWireframe">
+          <label for="showWireframe">显示线框</label>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="randomSize">
+          <label for="randomSize">随机粒子大小</label>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="section actions">
+        <button id="resetCamera" class="btn-secondary">🎥 重置视角</button>
+        <button id="screenshot" class="btn-secondary">📸 截图保存</button>
+      </div>
+
+      <div class="section stats">
+        <div id="fpsCounter">FPS: --</div>
+        <div id="particleCount">粒子数: --</div>
+      </div>
+    </div>
+
+    <div id="loading" class="loading hidden">
+      <div class="spinner"></div>
+      <p>正在生成模型...</p>
+    </div>
+
+    <div id="help-tip" class="help-tip">
+      <p>🖱️ 左键拖拽旋转 | 右键拖拽平移 | 滚轮缩放</p>
+      <p style="margin-top:4px;color:#ff2a6d;">🔴 当前为测试模式，重点观察「模型原色」下的纹理还原度</p>
+    </div>
+  </div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+import { STLLoader } from 'three/addons/loaders/STLLoader.js';
+import { PLYLoader } from 'three/addons/loaders/PLYLoader.js';
+
+// ========== 场景初始化 ==========
+const canvas = document.getElementById('canvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setClearColor(0x0a0a0f);
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x0a0a0f, 0.02);
+
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.set(0, 0, 18);
+
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.5;
+
+scene.add(new THREE.AmbientLight(0x404040, 1.5));
+const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+dirLight.position.set(5, 10, 7);
+scene.add(dirLight);
+
+// ========== 状态 ==========
+const state = {
+  particles: null, wireframe: null, geometry: null,
+  clock: new THREE.Clock(), animTime: 0, isLoaded: false
+};
+const ui = {};
+
+const colorThemes = {
+  cyan:    { base: new THREE.Color(0x00e5ff), secondary: new THREE.Color(0x0088cc), mix: 0.3 },
+  fire:    { base: new THREE.Color(0xff4400), secondary: new THREE.Color(0xffcc00), mix: 0.4 },
+  neon:    { base: new THREE.Color(0xff2a6d), secondary: new THREE.Color(0xb829dd), mix: 0.35 },
+  rainbow: { base: new THREE.Color(0xff0000), secondary: new THREE.Color(0x00ff00), mix: 0.5 },
+  white:   { base: new THREE.Color(0xffffff), secondary: new THREE.Color(0xaaaaaa), mix: 0.2 }
+};
+
+// ========== 纹理采样器 ==========
+function createTextureSampler(texture, maxSize = 512) {
+  const image = texture.image;
+  if (!image || !image.width) return null;
+  const canvas = document.createElement('canvas');
+  let w = image.width, h = image.height;
+  if (w > maxSize || h > maxSize) {
+    const scale = maxSize / Math.max(w, h);
+    w = Math.floor(w * scale);
+    h = Math.floor(h * scale);
+  }
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(image, 0, 0, w, h);
+  const data = ctx.getImageData(0, 0, w, h).data;
+  const wrapU = texture.wrapS === THREE.RepeatWrapping;
+  const wrapV = texture.wrapT === THREE.RepeatWrapping;
+  return function(u, v) {
+    let tx = wrapU ? (u % 1 + 1) % 1 : Math.max(0, Math.min(1, u));
+    let ty = wrapV ? (v % 1 + 1) % 1 : Math.max(0, Math.min(1, v));
+    const px = Math.floor(tx * (w - 1));
+    const py = Math.floor((1 - ty) * (h - 1));
+    const idx = (py * w + px) * 4;
+    return new THREE.Color(data[idx]/255, data[idx+1]/255, data[idx+2]/255);
+  };
+}
+
+function injectVertexColors(geo, material) {
+  if (geo.attributes.color) return;
+  const mat = Array.isArray(material) ? material[0] : material;
+  if (!mat) return;
+  const uvAttr = geo.attributes.uv;
+  const count = geo.attributes.position.count;
+  const colors = new Float32Array(count * 3);
+  if (mat.map && mat.map.image && uvAttr) {
+    const sampler = createTextureSampler(mat.map);
+    for (let i = 0; i < count; i++) {
+      const c = sampler(uvAttr.getX(i), uvAttr.getY(i));
+      colors[i*3] = c.r; colors[i*3+1] = c.g; colors[i*3+2] = c.b;
+    }
+  } else {
+    const c = (mat.color && mat.color.isColor) ? mat.color : new THREE.Color(0xffffff);
+    for (let i = 0; i < count; i++) {
+      colors[i*3] = c.r; colors[i*3+1] = c.g; colors[i*3+2] = c.b;
+    }
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+}
+
+// ========== Shader ==========
+const vs = `
+  attribute float size; attribute float random; attribute float idx;
+  varying vec3 vColor; varying float vRandom; varying float vDepth;
+  uniform float uTime, uPointSize, uAnimStrength, uAnimSpeed; uniform int uAnimMode;
+  #define MODE_NONE 0
+  #define MODE_EXPLODE 1
+  #define MODE_WAVE 2
+  #define MODE_BREATHE 3
+  void main() {
+    vColor = color; vRandom = random;
+    vec3 pos = position; float t = uTime * uAnimSpeed;
+    if (uAnimMode == MODE_EXPLODE) {
+      float phase = sin(t * 0.8 + random * 6.28318);
+      float expand = smoothstep(-1.0, 1.0, phase) * uAnimStrength * 0.05;
+      vec3 dir = normalize(normal + vec3(random - 0.5) * 0.3);
+      pos += dir * expand;
+    } else if (uAnimMode == MODE_WAVE) {
+      float wave = sin(position.x * 0.5 + t + random * 2.0) + cos(position.y * 0.5 + t * 0.7 + random * 3.0);
+      pos += normal * wave * uAnimStrength * 0.015;
+    } else if (uAnimMode == MODE_BREATHE) {
+      float breathe = 1.0 + sin(t * 1.2 + random * 2.0) * uAnimStrength * 0.003;
+      pos *= breathe;
+    }
+    vec4 mv = modelViewMatrix * vec4(pos, 1.0);
+    vDepth = -mv.z;
+    float atten = 300.0 / -mv.z;
+    gl_PointSize = size * uPointSize * atten;
+    gl_Position = projectionMatrix * mv;
+  }`;
+
+const fs = `
+  varying vec3 vColor; varying float vRandom; varying float vDepth;
+  uniform float uTime, uOpacity; uniform bool uGlow;
+  void main() {
+    vec2 c = gl_PointCoord - vec2(0.5);
+    float d = length(c);
+    if (d > 0.5) discard;
+    float glow = 1.0 - smoothstep(0.3, 0.5, d);
+    if (!uGlow) glow = 1.0;
+    float depthFade = smoothstep(50.0, 5.0, vDepth);
+    float twinkle = 0.9 + 0.1 * sin(uTime * 2.0 + vRandom * 100.0);
+    vec3 finalColor = vColor * glow * twinkle * (0.85 + 0.15 * depthFade);
+    float alpha = glow * depthFade * uOpacity;
+    gl_FragColor = vec4(finalColor, alpha);
+  }`;
+
+function animModeToInt(mode) {
+  return { none: 0, explode: 1, wave: 2, breathe: 3 }[mode] ?? 0;
+}
+
+// ========== 粒子采样 ==========
+function sampleParticles(geometry, count) {
+  geometry.computeBoundingSphere();
+  geometry.computeVertexNormals();
+  const posAttr = geometry.attributes.position;
+  const normAttr = geometry.attributes.normal;
+  const colAttr = geometry.attributes.color;
+  const index = geometry.index;
+  let triCount, useIndexed = false;
+  if (index && index.count > 0) { triCount = index.count / 3; useIndexed = true; }
+  else { triCount = posAttr.count / 3; }
+
+  const areas = new Float32Array(triCount);
+  let totalArea = 0;
+  for (let i = 0; i < triCount; i++) {
+    let a, b, c;
+    if (useIndexed) {
+      a = new THREE.Vector3().fromBufferAttribute(posAttr, index.array[i*3]);
+      b = new THREE.Vector3().fromBufferAttribute(posAttr, index.array[i*3+1]);
+      c = new THREE.Vector3().fromBufferAttribute(posAttr, index.array[i*3+2]);
+    } else {
+      a = new THREE.Vector3().fromBufferAttribute(posAttr, i*3);
+      b = new THREE.Vector3().fromBufferAttribute(posAttr, i*3+1);
+      c = new THREE.Vector3().fromBufferAttribute(posAttr, i*3+2);
+    }
+    const area = new THREE.Triangle(a,b,c).getArea();
+    areas[i] = area; totalArea += area;
+  }
+  const cdf = new Float32Array(triCount);
+  let cum = 0;
+  for (let i = 0; i < triCount; i++) { cum += areas[i]/totalArea; cdf[i] = cum; }
+
+  const positions = new Float32Array(count*3);
+  const normals = new Float32Array(count*3);
+  const colors = new Float32Array(count*3);
+  const modelColors = new Float32Array(count*3);
+  const sizes = new Float32Array(count);
+  const randoms = new Float32Array(count);
+  const indices = new Float32Array(count);
+
+  const _vA = new THREE.Vector3(), _vB = new THREE.Vector3(), _vC = new THREE.Vector3();
+  const _nA = new THREE.Vector3(), _nB = new THREE.Vector3(), _nC = new THREE.Vector3();
+  const _point = new THREE.Vector3(), _normal = new THREE.Vector3();
+
+  function getTrianglePoint(triIdx, r1, r2) {
+    const s = Math.sqrt(r1), u = 1-s, v = s*(1-r2), w = s*r2;
+    let i0, i1, i2;
+    if (useIndexed) { i0 = index.array[triIdx*3]; i1 = index.array[triIdx*3+1]; i2 = index.array[triIdx*3+2]; }
+    else { i0 = triIdx*3; i1 = triIdx*3+1; i2 = triIdx*3+2; }
+    _vA.fromBufferAttribute(posAttr, i0); _vB.fromBufferAttribute(posAttr, i1); _vC.fromBufferAttribute(posAttr, i2);
+    _point.set(0,0,0).addScaledVector(_vA, u).addScaledVector(_vB, v).addScaledVector(_vC, w);
+    if (normAttr) {
+      _nA.fromBufferAttribute(normAttr, i0); _nB.fromBufferAttribute(normAttr, i1); _nC.fromBufferAttribute(normAttr, i2);
+      _normal.set(0,0,0).addScaledVector(_nA, u).addScaledVector(_nB, v).addScaledVector(_nC, w).normalize();
+    } else { _normal.set(0,1,0); }
+    let color = null;
+    if (colAttr) {
+      color = {
+        r: colAttr.array[i0*3]*u + colAttr.array[i1*3]*v + colAttr.array[i2*3]*w,
+        g: colAttr.array[i0*3+1]*u + colAttr.array[i1*3+1]*v + colAttr.array[i2*3+1]*w,
+        b: colAttr.array[i0*3+2]*u + colAttr.array[i1*3+2]*v + colAttr.array[i2*3+2]*w
+      };
+    }
+    return { point: _point.clone(), normal: _normal.clone(), color };
+  }
+
+  function sampleTriangle() {
+    const r = Math.random();
+    let lo = 0, hi = triCount - 1;
+    while (lo < hi) { const mid = (lo+hi)>>1; if (cdf[mid] < r) lo = mid+1; else hi = mid; }
+    return lo;
+  }
+
+  for (let i = 0; i < count; i++) {
+    const { point, normal, color } = getTrianglePoint(sampleTriangle(), Math.random(), Math.random());
+    positions[i*3] = point.x; positions[i*3+1] = point.y; positions[i*3+2] = point.z;
+    normals[i*3] = normal.x; normals[i*3+1] = normal.y; normals[i*3+2] = normal.z;
+    if (color) {
+      modelColors[i*3] = color.r; modelColors[i*3+1] = color.g; modelColors[i*3+2] = color.b;
+    } else {
+      modelColors[i*3] = 1; modelColors[i*3+1] = 1; modelColors[i*3+2] = 1;
+    }
+    randoms[i] = Math.random(); indices[i] = i/count; sizes[i] = 1.0;
+  }
+
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  g.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+  g.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  g.setAttribute('modelColor', new THREE.BufferAttribute(modelColors, 3));
+  g.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+  g.setAttribute('random', new THREE.BufferAttribute(randoms, 1));
+  g.setAttribute('idx', new THREE.BufferAttribute(indices, 1));
+  return g;
+}
+
+function updateColors(geo, themeKey) {
+  const colors = geo.attributes.color.array;
+  const modelColors = geo.attributes.modelColor?.array;
+  const randoms = geo.attributes.random.array;
+  const idxs = geo.attributes.idx.array;
+  const count = geo.attributes.position.count;
+  for (let i = 0; i < count; i++) {
+    if (themeKey === 'original') {
+      if (modelColors) {
+        colors[i*3] = modelColors[i*3];
+        colors[i*3+1] = modelColors[i*3+1];
+        colors[i*3+2] = modelColors[i*3+2];
+      } else { colors[i*3] = 0; colors[i*3+1] = 0.9; colors[i*3+2] = 1; }
+      continue;
+    }
+    const theme = colorThemes[themeKey];
+    const r = randoms[i];
+    let c;
+    if (themeKey === 'rainbow') { c = new THREE.Color().setHSL(idxs[i], 0.85, 0.55); }
+    else { c = new THREE.Color().lerpColors(theme.base, theme.secondary, r * theme.mix * 3); }
+    colors[i*3] = c.r; colors[i*3+1] = c.g; colors[i*3+2] = c.b;
+  }
+  geo.attributes.color.needsUpdate = true;
+}
+
+function updateSizes(geo, baseSize, randomEnabled) {
+  const sizes = geo.attributes.size.array;
+  const randoms = geo.attributes.random.array;
+  for (let i = 0; i < sizes.length; i++) {
+    sizes[i] = baseSize * (randomEnabled ? (0.5 + randoms[i]) : 1.0);
+  }
+  geo.attributes.size.needsUpdate = true;
+}
+
+function createSystem(geo, count) {
+  if (state.particles) { scene.remove(state.particles); state.particles.geometry.dispose(); state.particles.material.dispose(); }
+  if (state.wireframe) { scene.remove(state.wireframe); state.wireframe.geometry.dispose(); state.wireframe.material.dispose(); state.wireframe = null; }
+
+  const particleGeo = sampleParticles(geo, count);
+  state.geometry = geo;
+
+  if (!geo.attributes.color) particleGeo.deleteAttribute('modelColor');
+
+  updateColors(particleGeo, ui.colorTheme.value);
+  updateSizes(particleGeo, parseFloat(ui.pointSize.value), ui.randomSize.checked);
+
+  const mat = new THREE.ShaderMaterial({
+    uniforms: {
+      uTime: { value: 0 }, uPointSize: { value: parseFloat(ui.pointSize.value) },
+      uAnimStrength: { value: parseFloat(ui.animStrength.value) },
+      uAnimSpeed: { value: 1.0 }, uAnimMode: { value: animModeToInt(ui.animMode.value) },
+      uGlow: { value: ui.glowEffect.checked }, uOpacity: { value: parseFloat(ui.opacity.value) }
+    },
+    vertexShader: vs, fragmentShader: fs,
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, vertexColors: true
+  });
+  const points = new THREE.Points(particleGeo, mat);
+  scene.add(points); state.particles = points;
+
+  // wireframe
+  if (ui.showWireframe.checked) {
+    const wg = new THREE.WireframeGeometry(geo);
+    const wm = new THREE.LineBasicMaterial({ color: 0x333344, transparent: true, opacity: 0.15 });
+    state.wireframe = new THREE.LineSegments(wg, wm);
+    scene.add(state.wireframe);
+  }
+
+  // center
+  geo.computeBoundingSphere();
+  const center = geo.boundingSphere.center;
+  const radius = geo.boundingSphere.radius;
+  points.position.copy(center).multiplyScalar(-1);
+  if (state.wireframe) state.wireframe.position.copy(center).multiplyScalar(-1);
+  const dist = (radius * 2.5) / Math.tan((camera.fov * Math.PI/180) / 2);
+  camera.position.set(0, 0, Math.max(dist, 5));
+  controls.target.set(0,0,0); controls.update();
+
+  state.isLoaded = true;
+  ui.particleCount.textContent = `粒子数: ${count.toLocaleString()}`;
+}
+
+// ========== 测试模型生成 ==========
+function createCanvasTexture(width, height, drawFn) {
+  const c = document.createElement('canvas');
+  c.width = width; c.height = height;
+  const ctx = c.getContext('2d');
+  drawFn(ctx, width, height);
+  return new THREE.CanvasTexture(c);
+}
+
+const testModels = [
+  {
+    name: '棋盘格立方体',
+    desc: '黑白棋盘',
+    create() {
+      const tex = createCanvasTexture(256, 256, (ctx, w, h) => {
+        const size = 32;
+        for (let y = 0; y < h; y += size) {
+          for (let x = 0; x < w; x += size) {
+            ctx.fillStyle = ((x/size + y/size) % 2 === 0) ? '#ffffff' : '#222222';
+            ctx.fillRect(x, y, size, size);
+          }
+        }
+      });
+      const geo = new THREE.BoxGeometry(4, 4, 4, 20, 20, 20);
+      const mat = new THREE.MeshBasicMaterial({ map: tex });
+      const mesh = new THREE.Mesh(geo, mat);
+      injectVertexColors(geo, mat);
+      return geo;
+    }
+  },
+  {
+    name: '彩虹球体',
+    desc: '彩虹渐变',
+    create() {
+      const tex = createCanvasTexture(512, 256, (ctx, w, h) => {
+        const grad = ctx.createLinearGradient(0, 0, w, 0);
+        ['#ff0000','#ff8800','#ffff00','#00ff00','#0088ff','#0000ff','#8800ff','#ff0088'].forEach((c, i, arr) => {
+          grad.addColorStop(i/(arr.length-1), c);
+        });
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, h);
+      });
+      const geo = new THREE.SphereGeometry(3.5, 64, 64);
+      const mat = new THREE.MeshBasicMaterial({ map: tex });
+      injectVertexColors(geo, mat);
+      return geo;
+    }
+  },
+  {
+    name: '条纹圆环',
+    desc: '红蓝竖条纹',
+    create() {
+      const tex = createCanvasTexture(256, 256, (ctx, w, h) => {
+        const stripes = 16;
+        const sw = w / stripes;
+        for (let i = 0; i < stripes; i++) {
+          ctx.fillStyle = i % 2 === 0 ? '#ff2244' : '#2244ff';
+          ctx.fillRect(i * sw, 0, sw, h);
+        }
+        // 加文字标识
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 40px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('TEST', w/2, h/2 + 15);
+      });
+      const geo = new THREE.TorusGeometry(3, 1.2, 32, 100);
+      const mat = new THREE.MeshBasicMaterial({ map: tex });
+      injectVertexColors(geo, mat);
+      return geo;
+    }
+  },
+  {
+    name: '文字立方体',
+    desc: '多面不同色',
+    create() {
+      const tex = createCanvasTexture(512, 512, (ctx, w, h) => {
+        // 六个区域代表六个面
+        const colors = ['#ff4444', '#44ff44', '#4444ff', '#ffff44', '#ff44ff', '#44ffff'];
+        const labels = ['RED', 'GREEN', 'BLUE', 'YELLOW', 'PINK', 'CYAN'];
+        const hw = w/3, hh = h/2;
+        let idx = 0;
+        for (let row = 0; row < 2; row++) {
+          for (let col = 0; col < 3; col++) {
+            ctx.fillStyle = colors[idx];
+            ctx.fillRect(col*hw, row*hh, hw, hh);
+            ctx.fillStyle = '#000000';
+            ctx.font = 'bold 36px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(labels[idx], col*hw + hw/2, row*hh + hh/2 + 12);
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(col*hw+2, row*hh+2, hw-4, hh-4);
+            idx++;
+          }
+        }
+      });
+      const geo = new THREE.BoxGeometry(5, 5, 5, 25, 25, 25);
+      const mat = new THREE.MeshBasicMaterial({ map: tex });
+      injectVertexColors(geo, mat);
+      return geo;
+    }
+  },
+  {
+    name: '渐变圆锥',
+    desc: '径向渐变',
+    create() {
+      const tex = createCanvasTexture(256, 256, (ctx, w, h) => {
+        const grad = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, w/2);
+        grad.addColorStop(0, '#ffffff');
+        grad.addColorStop(0.3, '#ff8800');
+        grad.addColorStop(0.6, '#ff0044');
+        grad.addColorStop(1, '#220044');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, h);
+      });
+      const geo = new THREE.ConeGeometry(3.5, 7, 64, 20);
+      const mat = new THREE.MeshBasicMaterial({ map: tex });
+      injectVertexColors(geo, mat);
+      return geo;
+    }
+  },
+  {
+    name: '照片球',
+    desc: '模拟照片纹理',
+    create() {
+      const tex = createCanvasTexture(512, 256, (ctx, w, h) => {
+        // 天空
+        const sky = ctx.createLinearGradient(0, 0, 0, h/2);
+        sky.addColorStop(0, '#1a237e');
+        sky.addColorStop(1, '#4fc3f7');
+        ctx.fillStyle = sky;
+        ctx.fillRect(0, 0, w, h/2);
+        // 地面
+        ctx.fillStyle = '#2e7d32';
+        ctx.fillRect(0, h/2, w, h/2);
+        // 太阳
+        ctx.beginPath();
+        ctx.arc(w*0.75, h*0.25, 30, 0, Math.PI*2);
+        ctx.fillStyle = '#ffeb3b';
+        ctx.fill();
+        // 树
+        for (let i = 0; i < 5; i++) {
+          const x = w * (0.1 + i * 0.18);
+          const y = h * 0.65;
+          ctx.fillStyle = '#5d4037';
+          ctx.fillRect(x-4, y, 8, 25);
+          ctx.beginPath();
+          ctx.arc(x, y-5, 18, 0, Math.PI*2);
+          ctx.fillStyle = '#388e3c';
+          ctx.fill();
+        }
+        // 云朵
+        ctx.fillStyle = 'rgba(255,255,255,0.8)';
+        for (let i = 0; i < 3; i++) {
+          const cx = w * (0.2 + i * 0.3);
+          const cy = h * 0.2;
+          ctx.beginPath(); ctx.arc(cx, cy, 20, 0, Math.PI*2); ctx.fill();
+          ctx.beginPath(); ctx.arc(cx+15, cy+5, 18, 0, Math.PI*2); ctx.fill();
+          ctx.beginPath(); ctx.arc(cx-12, cy+5, 16, 0, Math.PI*2); ctx.fill();
+        }
+      });
+      const geo = new THREE.SphereGeometry(4, 80, 80);
+      const mat = new THREE.MeshBasicMaterial({ map: tex });
+      injectVertexColors(geo, mat);
+      return geo;
+    }
+  }
+];
+
+// 渲染测试模型按钮
+const testContainer = document.getElementById('testModels');
+testModels.forEach((model, idx) => {
+  // 生成缩略图
+  const thumbCanvas = document.createElement('canvas');
+  thumbCanvas.width = 128; thumbCanvas.height = 64;
+  const tctx = thumbCanvas.getContext('2d');
+  // 简单缩略图
+  if (idx === 0) { // checkerboard
+    for (let y = 0; y < 64; y += 16) for (let x = 0; x < 128; x += 16) {
+      tctx.fillStyle = ((x/16+y/16)%2===0)?'#fff':'#333'; tctx.fillRect(x,y,16,16);
+    }
+  } else if (idx === 1) { // rainbow
+    const g = tctx.createLinearGradient(0,0,128,0);
+    g.addColorStop(0,'#f00'); g.addColorStop(0.5,'#0f0'); g.addColorStop(1,'#00f');
+    tctx.fillStyle = g; tctx.fillRect(0,0,128,64);
+  } else if (idx === 2) { // stripes
+    for (let i = 0; i < 8; i++) { tctx.fillStyle = i%2===0?'#f24':'#24f'; tctx.fillRect(i*16,0,16,64); }
+  } else if (idx === 3) { // colored faces
+    tctx.fillStyle = '#f44'; tctx.fillRect(0,0,43,32);
+    tctx.fillStyle = '#4f4'; tctx.fillRect(43,0,43,32);
+    tctx.fillStyle = '#44f'; tctx.fillRect(86,0,42,32);
+    tctx.fillStyle = '#ff4'; tctx.fillRect(0,32,43,32);
+    tctx.fillStyle = '#f4f'; tctx.fillRect(43,32,43,32);
+    tctx.fillStyle = '#4ff'; tctx.fillRect(86,32,42,32);
+  } else if (idx === 4) { // gradient
+    const g = tctx.createRadialGradient(64,32,0,64,32,64);
+    g.addColorStop(0,'#fff'); g.addColorStop(1,'#204');
+    tctx.fillStyle = g; tctx.fillRect(0,0,128,64);
+  } else { // landscape
+    tctx.fillStyle = '#4fc3f7'; tctx.fillRect(0,0,128,32);
+    tctx.fillStyle = '#2e7d32'; tctx.fillRect(0,32,128,32);
+    tctx.fillStyle = '#ffeb3b'; tctx.beginPath(); tctx.arc(100,20,10,0,Math.PI*2); tctx.fill();
+  }
+
+  const btn = document.createElement('button');
+  btn.className = 'test-btn';
+  btn.innerHTML = `
+    <img class="test-preview" src="${thumbCanvas.toDataURL()}">
+    <div><strong>${model.name}</strong></div>
+    <div style="font-size:0.65rem;color:#888;margin-top:2px;">${model.desc}</div>
+  `;
+  btn.addEventListener('click', () => {
+    showLoading(true);
+    setTimeout(() => {
+      const geo = model.create();
+      createSystem(geo, parseInt(ui.density.value));
+      ui.modelInfo.textContent = `测试模型: ${model.name}`;
+      ui.modelInfo.classList.remove('hidden');
+      showLoading(false);
+    }, 50);
+  });
+  testContainer.appendChild(btn);
+});
+
+// ========== 文件加载 ==========
+function showLoading(show) {
+  document.getElementById('loading').classList.toggle('hidden', !show);
+}
+
+async function loadModelFile(file) {
+  showLoading(true);
+  const ext = file.name.split('.').pop().toLowerCase();
+  const url = URL.createObjectURL(file);
+  let geo = null;
+  try {
+    switch (ext) {
+      case 'obj': {
+        const obj = await new OBJLoader().loadAsync(url);
+        geo = mergeOBJ(obj);
+        break;
+      }
+      case 'gltf': case 'glb': {
+        const gltf = await new GLTFLoader().loadAsync(url);
+        const meshes = [];
+        gltf.scene.traverse(child => {
+          if (child.isMesh && child.geometry) {
+            const g = child.geometry.clone();
+            injectVertexColors(g, child.material);
+            meshes.push(g);
+          }
+        });
+        if (meshes.length > 0) geo = meshes.length === 1 ? meshes[0] : mergeGeometriesManual(meshes);
+        break;
+      }
+      case 'fbx': {
+        const fbx = await new FBXLoader().loadAsync(url);
+        const meshes = [];
+        fbx.traverse(child => {
+          if (child.isMesh && child.geometry) {
+            const g = child.geometry.clone();
+            injectVertexColors(g, child.material);
+            meshes.push(g);
+          }
+        });
+        if (meshes.length > 0) geo = meshes.length === 1 ? meshes[0] : mergeGeometriesManual(meshes);
+        break;
+      }
+      case 'stl': geo = await new STLLoader().loadAsync(url); break;
+      case 'ply': geo = await new PLYLoader().loadAsync(url); break;
+      default: throw new Error('不支持的格式: ' + ext);
+    }
+  } catch (err) {
+    alert('加载失败: ' + err.message);
+    console.error(err);
+  } finally {
+    URL.revokeObjectURL(url);
+    showLoading(false);
+  }
+  if (geo) {
+    createSystem(geo, parseInt(ui.density.value));
+    ui.modelInfo.textContent = `当前: ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+    ui.modelInfo.classList.remove('hidden');
+  }
+}
+
+function mergeOBJ(obj) {
+  const geometries = [];
+  obj.traverse(child => {
+    if (child.isMesh && child.geometry) {
+      child.updateMatrixWorld();
+      const g = child.geometry.clone();
+      g.applyMatrix4(child.matrixWorld);
+      injectVertexColors(g, child.material);
+      geometries.push(g);
+    }
+  });
+  if (geometries.length === 0) return new THREE.BoxGeometry(1,1,1);
+  if (geometries.length === 1) return geometries[0];
+  return mergeGeometriesManual(geometries);
+}
+
+function mergeGeometriesManual(geometries) {
+  let totalVerts = 0, totalIndices = 0, hasIndex = true, hasColor = true;
+  for (const g of geometries) {
+    totalVerts += g.attributes.position.count;
+    if (g.index) totalIndices += g.index.count;
+    else hasIndex = false;
+    if (!g.attributes.color) hasColor = false;
+  }
+  const posArr = new Float32Array(totalVerts * 3);
+  const normArr = new Float32Array(totalVerts * 3);
+  const colArr = hasColor ? new Float32Array(totalVerts * 3) : null;
+  let idxArr = null;
+  if (hasIndex && totalIndices > 0) idxArr = new Uint32Array(totalIndices);
+
+  let vOffset = 0, iOffset = 0;
+  for (const g of geometries) {
+    const pos = g.attributes.position.array;
+    const norm = g.attributes.normal ? g.attributes.normal.array : null;
+    const col = g.attributes.color ? g.attributes.color.array : null;
+    const count = g.attributes.position.count;
+    for (let i = 0; i < count; i++) {
+      posArr[(vOffset+i)*3] = pos[i*3];
+      posArr[(vOffset+i)*3+1] = pos[i*3+1];
+      posArr[(vOffset+i)*3+2] = pos[i*3+2];
+      if (norm) { normArr[(vOffset+i)*3] = norm[i*3]; normArr[(vOffset+i)*3+1] = norm[i*3+1]; normArr[(vOffset+i)*3+2] = norm[i*3+2]; }
+      else { normArr[(vOffset+i)*3] = 0; normArr[(vOffset+i)*3+1] = 1; normArr[(vOffset+i)*3+2] = 0; }
+      if (colArr && col) { colArr[(vOffset+i)*3] = col[i*3]; colArr[(vOffset+i)*3+1] = col[i*3+1]; colArr[(vOffset+i)*3+2] = col[i*3+2]; }
+      else if (colArr) { colArr[(vOffset+i)*3] = 1; colArr[(vOffset+i)*3+1] = 1; colArr[(vOffset+i)*3+2] = 1; }
+    }
+    if (g.index && idxArr) {
+      for (let i = 0; i < g.index.count; i++) idxArr[iOffset+i] = g.index.array[i] + vOffset;
+      iOffset += g.index.count;
+    }
+    vOffset += count;
+  }
+  const merged = new THREE.BufferGeometry();
+  merged.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+  merged.setAttribute('normal', new THREE.BufferAttribute(normArr, 3));
+  if (colArr) merged.setAttribute('color', new THREE.BufferAttribute(colArr, 3));
+  if (idxArr) merged.setIndex(new THREE.BufferAttribute(idxArr, 1));
+  return merged;
+}
+
+// ========== UI ==========
+function bindUI() {
+  const ids = ['density','pointSize','opacity','colorTheme','animMode','animStrength'];
+  ids.forEach(id => ui[id] = document.getElementById(id));
+  ['density','pointSize','opacity','animStrength'].forEach(id => {
+    ui[id+'Val'] = document.getElementById(id+'Val');
+    ui[id].addEventListener('input', () => { ui[id+'Val'].textContent = ui[id].value; });
+  });
+  ui.showWireframe = document.getElementById('showWireframe');
+  ui.autoRotate = document.getElementById('autoRotate');
+  ui.glowEffect = document.getElementById('glowEffect');
+  ui.randomSize = document.getElementById('randomSize');
+  ui.fpsCounter = document.getElementById('fpsCounter');
+  ui.particleCount = document.getElementById('particleCount');
+  ui.modelInfo = document.getElementById('modelInfo');
+
+  ui.density.addEventListener('change', () => {
+    if (state.geometry) createSystem(state.geometry, parseInt(ui.density.value));
+  });
+  ui.pointSize.addEventListener('input', () => {
+    if (state.particles) updateSizes(state.particles.geometry, parseFloat(ui.pointSize.value), ui.randomSize.checked);
+  });
+  ui.opacity.addEventListener('input', () => {
+    if (state.particles) state.particles.material.uniforms.uOpacity.value = parseFloat(ui.opacity.value);
+  });
+  ui.randomSize.addEventListener('change', () => {
+    if (state.particles) updateSizes(state.particles.geometry, parseFloat(ui.pointSize.value), ui.randomSize.checked);
+  });
+  ui.colorTheme.addEventListener('change', () => {
+    if (state.particles) updateColors(state.particles.geometry, ui.colorTheme.value);
+  });
+  ui.animMode.addEventListener('change', () => {
+    if (state.particles) state.particles.material.uniforms.uAnimMode.value = animModeToInt(ui.animMode.value);
+  });
+  ui.animStrength.addEventListener('input', () => {
+    if (state.particles) state.particles.material.uniforms.uAnimStrength.value = parseFloat(ui.animStrength.value);
+  });
+  ui.glowEffect.addEventListener('change', () => {
+    if (state.particles) state.particles.material.uniforms.uGlow.value = ui.glowEffect.checked;
+  });
+  ui.showWireframe.addEventListener('change', () => {
+    if (state.wireframe) { scene.remove(state.wireframe); state.wireframe = null; }
+    if (ui.showWireframe.checked && state.geometry) {
+      const wg = new THREE.WireframeGeometry(state.geometry);
+      const wm = new THREE.LineBasicMaterial({ color: 0x333344, transparent: true, opacity: 0.15 });
+      state.wireframe = new THREE.LineSegments(wg, wm);
+      state.wireframe.position.copy(state.geometry.boundingSphere.center).multiplyScalar(-1);
+      scene.add(state.wireframe);
+    }
+  });
+
+  document.getElementById('modelInput').addEventListener('change', e => {
+    const file = e.target.files[0]; if (file) loadModelFile(file);
+  });
+  document.getElementById('resetCamera').addEventListener('click', () => {
+    if (state.geometry) {
+      const r = state.geometry.boundingSphere.radius;
+      const dist = (r * 2.5) / Math.tan((camera.fov * Math.PI/180) / 2);
+      camera.position.set(0, 0, Math.max(dist, 5));
+      controls.target.set(0,0,0); controls.update();
+    }
+  });
+  document.getElementById('screenshot').addEventListener('click', () => {
+    renderer.render(scene, camera);
+    const a = document.createElement('a');
+    a.download = `test-${Date.now()}.png`;
+    a.href = renderer.domElement.toDataURL('image/png');
+    a.click();
+  });
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+}
+
+// ========== 动画 ==========
+let lastFps = 0, frames = 0;
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = state.clock.getDelta();
+  state.animTime += dt;
+  if (state.particles) {
+    const m = state.particles.material;
+    m.uniforms.uTime.value = state.animTime;
+    m.uniforms.uPointSize.value = parseFloat(ui.pointSize.value);
+    m.uniforms.uAnimStrength.value = parseFloat(ui.animStrength.value);
+    m.uniforms.uAnimMode.value = animModeToInt(ui.animMode.value);
+    m.uniforms.uGlow.value = ui.glowEffect.checked;
+    m.uniforms.uOpacity.value = parseFloat(ui.opacity.value);
+  }
+  controls.autoRotate = ui.autoRotate.checked;
+  controls.update();
+  renderer.render(scene, camera);
+  frames++;
+  const now = performance.now();
+  if (now - lastFps >= 1000) { ui.fpsCounter.textContent = `FPS: ${frames}`; frames = 0; lastFps = now; }
+}
+
+bindUI();
+// 默认加载第一个测试模型
+setTimeout(() => {
+  const geo = testModels[0].create();
+  createSystem(geo, 15000);
+  ui.modelInfo.textContent = `测试模型: ${testModels[0].name}`;
+  ui.modelInfo.classList.remove('hidden');
+}, 100);
+animate();
+</script>
+</body>
+</html>
