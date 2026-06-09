@@ -36,17 +36,17 @@ const colorThemes = {
 
 // ========== 场景初始化 ==========
 const canvas = document.getElementById('canvas');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true, logarithmicDepthBuffer: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setClearColor(0x0a0a0f);
 
 const scene = new THREE.Scene();
-// fog 改为动态调整，避免大模型被裁切
-scene.fog = new THREE.FogExp2(0x0a0a0f, 0.002);
+// 不使用固定 fog，避免大模型被雾化裁切；深度感由 shader 中的 depthFade 负责
+scene.fog = null;
 
-// 无限视距：far 平面设极大值，near 随模型大小动态调整
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.01, 1e6);
+// 无限视距：启用 logarithmicDepthBuffer 后，far 可以设极大值而不损失深度精度
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.001, 1e12);
 camera.position.set(0, 0, 18);
 
 const controls = new OrbitControls(camera, canvas);
@@ -54,6 +54,7 @@ controls.enableDamping = true;
 controls.dampingFactor = 0.08;
 controls.autoRotate = true;
 controls.autoRotateSpeed = 0.5;
+controls.maxDistance = Infinity;
 
 // 环境光 + 方向光（用于 wireframe 材质）
 scene.add(new THREE.AmbientLight(0x404040, 1.5));
@@ -422,6 +423,9 @@ function updateParticleSizes(geo, baseSize, randomEnabled) {
 // ========== ShaderMaterial ==========
 
 const particleVertexShader = `
+  #include <common>
+  #include <logdepthbuf_pars_vertex>
+
   attribute float size;
   attribute float random;
   attribute float idx;
@@ -500,10 +504,14 @@ const particleVertexShader = `
     float sizeAtten = 300.0 / -mvPosition.z;
     gl_PointSize = size * uPointSize * sizeAtten;
     gl_Position = projectionMatrix * mvPosition;
+
+    #include <logdepthbuf_vertex>
   }
 `;
 
 const particleFragmentShader = `
+  #include <logdepthbuf_pars_fragment>
+
   varying vec3 vColor;
   varying float vRandom;
   varying float vDepth;
@@ -530,6 +538,8 @@ const particleFragmentShader = `
 
     vec3 finalColor = vColor * glow * twinkle * (0.7 + 0.3 * depthFade);
     float alpha = glow * depthFade * uOpacity;
+
+    #include <logdepthbuf_fragment>
 
     gl_FragColor = vec4(finalColor, alpha);
   }
@@ -707,17 +717,13 @@ function centerCamera(geo) {
   controls.update();
 
   // 无限视距：动态调整 near/far，避免大模型被裁切
-  const near = Math.max(0.001, radius * 0.001);
-  const far = Math.max(1e6, radius * 500);
+  // 配合 logarithmicDepthBuffer，far 可以设极大值而不损失深度精度
+  const near = Math.max(0.0001, radius * 0.0001);
+  const far = Math.max(1e12, radius * 1000);
   if (camera.near !== near || camera.far !== far) {
     camera.near = near;
     camera.far = far;
     camera.updateProjectionMatrix();
-  }
-
-  // 同步调整 fog，让大模型也能完整显示
-  if (scene.fog) {
-    scene.fog.density = Math.min(0.002, 1.5 / (radius * 10 + distance));
   }
 }
 
